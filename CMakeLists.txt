@@ -77,6 +77,8 @@ option(BUILD_TRACE_PLUGIN       "Build Trace plugin" ON)
 option(BUILD_USER_CODE_PLUGIN   "Build User-code plugin" ON)
 option(BUILD_JSON_PLUGIN        "Build JSON plugin" OFF)
 option(ENABLE_BENCHMARKING      "Activate benchmarks in the test suite" OFF)
+option(BUILD_DAMARIS_PLUGIN   	"Build Damaris plug-in" ON)
+
 
 
 
@@ -112,9 +114,12 @@ if("${BUILD_DECL_NETCDF_PLUGIN}")
 	endif()
 	list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/plugins/decl_netcdf/cmake")
 endif()
+
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" CACHE STRING "" FORCE)
-
-
+# A voir:
+#if("${BUILD_DAMARIS_PLUGIN}")
+#	list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/plugins/damaris/cmake")
+#endif()
 
 ### Sanity check
 
@@ -503,6 +508,12 @@ sbuild_add_module(USER_CODE_PLUGIN
 	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/plugins/user_code"
 	DEPENDS PDI
 	SUBSTEPS test
+)
+
+sbuild_add_module(DAMARIS_PLUGIN
+	ENABLE_BUILD_FLAG BUILD_DAMARIS_PLUGIN
+	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/plugins/damaris"
+	DEPENDS PDI #Damaris !?
 )
 
 sbuild_add_module(PDI_EXAMPLE
