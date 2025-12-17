@@ -35,7 +35,15 @@
  #include <pdi/plugin.h>
  #include <pdi/paraconf_wrapper.h>
  #include <pdi/ref_any.h>
- #include <bits/stdc++.h>
+//  #include <bits/stdc++.h>
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <map>
+#include <set>
+#include <unordered_map>
+#include <string>
+#include <cmath>
  
  #include "damaris_cfg.h"
  
