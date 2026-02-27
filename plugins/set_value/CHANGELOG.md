@@ -15,10 +15,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Removed
 
 ### Fixed
-* Correct some tests that would incorrectly compare floats with abs instead of
-  fabs, rounding down to zero and hence never failing, even in the case of error
 
 ### Security
+
+
+## [1.10.0] - 2026-01-31
+
+### Added
+* Added macOS CI [#556](https://github.com/pdidev/pdi/issues/556)
+
+### Changed
+* Update the version of dependencies according to our policy: oldest supported
+  Debian, Fedora & Ubuntu, as well as spack 0.19. The new requirements are:
+  CMake 3.22, and spdlog 1.9.2 [#613](https://github.com/pdidev/pdi/issues/613)
+
+### Fixed
+* Correct some tests that would incorrectly compare floats with abs instead of
+  fabs, rounding down to zero and hence never failing, even in the case of error
 
 
 ## [1.8.1] - 2025-01-23

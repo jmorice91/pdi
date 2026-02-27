@@ -1,7 +1,7 @@
 #=============================================================================
-# Copyright (C) 2015-2024 Commissariat a l'energie atomique et aux energies alternatives (CEA)
+# Copyright (C) 2015-2026 Commissariat a l'energie atomique et aux energies alternatives (CEA)
 # Copyright (C) 2021 Institute of Bioorganic Chemistry Polish Academy of Science (PSNC)
-# Copyright (C) 2022 Centre National de Recherche Scientifique (CNRS)
+# Copyright (C) 2022-2026 Centre National de Recherche Scientifique (CNRS)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,11 +28,11 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-cmake_minimum_required(VERSION 3.16...3.29)
+cmake_minimum_required(VERSION 3.22...4.2)
 
 if(NOT TARGET GTest::gtest)
 	option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
-	add_subdirectory("../../../vendor/googletest-b4aaf97/" "googletest" EXCLUDE_FROM_ALL)
+	add_subdirectory("../../../vendor/googletest-56efe39/" "googletest" EXCLUDE_FROM_ALL)
 endif()
 include(GoogleTest)
 
@@ -121,6 +121,17 @@ if("${BUILD_HDF5_PARALLEL}")
 	set_property(TEST decl_hdf5_mpi_07_C PROPERTY TIMEOUT 15)
 	set_property(TEST decl_hdf5_mpi_07_C PROPERTY PROCESSORS 4)
 endif()
+
+# case datasets is defined as a regex.
+# The data is writing in //. This data is defined with a dataset_selection and a dataset that depends on a regex
+if("${BUILD_HDF5_PARALLEL}")
+	add_executable(decl_hdf5_mpi_08_C decl_hdf5_mpi_test_08.c)
+	target_link_libraries(decl_hdf5_mpi_08_C PDI::PDI_C MPI::MPI_C)
+	add_test(NAME decl_hdf5_mpi_08_C COMMAND "${RUNTEST_DIR}" "${MPIEXEC}" "${MPIEXEC_NUMPROC_FLAG}" 4 ${MPIEXEC_PREFLAGS} "$<TARGET_FILE:decl_hdf5_mpi_08_C>" ${MPIEXEC_POSTFLAGS})
+	set_property(TEST decl_hdf5_mpi_08_C PROPERTY TIMEOUT 15)
+	set_property(TEST decl_hdf5_mpi_08_C PROPERTY PROCESSORS 4)
+endif()
+
 
 add_executable(decl_hdf5_IO_options_C decl_hdf5_test_IO_options.c)
 target_link_libraries(decl_hdf5_IO_options_C PDI::PDI_C  ${HDF5_DEPS})
