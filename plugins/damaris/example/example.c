@@ -164,16 +164,9 @@ int main(int argc, char* argv[])
 	MPI_Comm main_comm = MPI_COMM_WORLD;
 	PDI_init(PC_get(conf, ".pdi"));
 	PDI_event("init");
-	   
-	int is_client = -1;
 	
-	//PDI_expose("is_client", &is_client, PDI_IN);
-	PDI_expose("is_client", &is_client, PDI_INOUT);  // <-- allow plugin to set
-	PDI_expose("mpi_comm",  &main_comm,  PDI_INOUT); // <-- allow plugin to set
+	PDI_expose("mpi_comm",  &main_comm,  PDI_INOUT); // <-- allow plugin to set, returns Damaris client comm
 	
-   	if(is_client) {
-	//*******************************************************************Only damaris clients run this section
-
 	int psize_1d;
 	MPI_Comm_size(main_comm, &psize_1d);
 	int pcoord_1d;
@@ -181,6 +174,7 @@ int main(int argc, char* argv[])
 
 	PDI_expose("mpi_rank", &pcoord_1d, PDI_OUT);
 	PDI_expose("mpi_size", &psize_1d, PDI_OUT);
+	//init placed before `PDI_expose("mpi_comm",  &main_comm,  PDI_INOUT);` to use Damaris client comm
 	//PDI_event("init");
 
 	long longval;
@@ -250,26 +244,17 @@ int main(int argc, char* argv[])
 			next_reduce = ii + rem_iter;
 			if (0 == pcoord_1d) printf("iter=%7d; time=%7.3f; next_reduce=%7d\n", ii, global_time, next_reduce);
 		}
-	    //PDI_event("damaris_end_iteration");
 	}
 	PDI_event("finalization");
 	PDI_expose("iter", &ii, PDI_OUT);
 	PDI_expose("main_field", cur, PDI_OUT);
-	
-	//moved here to be in the scope, since if(is_client) has been added
-	free(cur);
-	free(next);
-	
-	//PDI_event("damaris_stop");
-	//*******************************************************************END if(is_client)
-	}//END if(is_client)
 
 	PDI_finalize();
 
 	PC_tree_destroy(&conf);
 
-	//free(cur);
-	//free(next);
+	free(cur);
+	free(next);
 
 	MPI_Finalize();
 }

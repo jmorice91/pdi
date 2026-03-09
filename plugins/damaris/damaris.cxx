@@ -131,7 +131,7 @@ public:
 	{		
 		ensure_damaris_is_initialized("");
 
-		context().logger().info("data `{}' has been exposed", name);
+		//context().logger().info("data `{}' has been exposed", name);
 
 		//Update damaris parameters
 		if(m_config.is_needed_metadata(name)){
@@ -189,7 +189,7 @@ public:
 			}
 		}
 		else if(m_config.is_dataset_to_write(name)){
-			context().logger().info("is_dataset_to_write(`{}') = '{}'", name, m_config.is_dataset_to_write(name));
+			//context().logger().info("is_dataset_to_write(`{}') = '{}'", name, m_config.is_dataset_to_write(name));
 			if (Ref_r rref = ref) {
 				Dataset_Write_Info ds_write_info = m_config.get_dataset_write_info(name);
 

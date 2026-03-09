@@ -72,7 +72,7 @@
         if (!result.second) {
             //ctx.logger().warn("Duplicate use of a descriptor `{}' in `{}' (previously used in `{}')", name, desc_names.at(desc_type), desc_names.at(result.first->second));
         }
-        return result.second;
+       return result.second;
     }
          
      bool load_event(unordered_map<string, Event_type>& events, Context& ctx, const string& name, Event_type event_type)
@@ -81,7 +81,7 @@
          if (!result.second) {
              //ctx.logger().warn("Duplicate use of a descriptor `{}' in `{}' (previously used in `{}')", name, desc_names.at(desc_type), desc_names.at(result.first->second));
          }
-         return result.second;
+        return result.second;
      }
  
  } // namespace <anonymous>
@@ -1154,7 +1154,7 @@
              }
          }
  
-         return is_dataset_to_write;
+        return is_dataset_to_write;
      }
  
      bool Damaris_cfg::is_parameter_to_update(std::string data_name)
@@ -1168,7 +1168,7 @@
              }
          }
  
-         return is_parameter_to_update;
+        return is_parameter_to_update;
      }
  
      bool Damaris_cfg::is_needed_metadata(std::string data_name)
@@ -1189,7 +1189,7 @@
              }
          }
  
-         return is_needed_metadata;
+        return is_needed_metadata;
      }
  
      
@@ -1225,7 +1225,7 @@
              }
          }
  
-         return updatable_parameters;
+        return updatable_parameters;
      }
      
  
@@ -1298,7 +1298,7 @@
                      root_gp_xml->add_ds_element(ds_elt_xml);
  
                      //free(root_gp_xml);
-                     return;
+                    return;
                  }
                  nearest_parent_group = root_gp_xml;
                  root_group_exists = true;
@@ -1326,7 +1326,7 @@
                              //(&sub_groups[group_id])->add_variable(ds_elt_xml);
                              (&sub_groups[group_id])->add_ds_element(ds_elt_xml);
  
-                             return;
+                            return;
                          }
                          insertion_group_found = false;
                          nearest_parent_group = &sub_groups[group_id++];
@@ -1345,7 +1345,7 @@
                  root_gp_xml.add_ds_element(ds_elt_xml);
                  root_groups_xml.emplace_back(root_gp_xml);
  
-                 return;
+                return;
              }
  
              root_groups_xml.emplace_back(root_gp_xml);
@@ -1431,27 +1431,27 @@
  const string& Damaris_cfg::xml_config_object( void )
  {
      m_xml_config_object = damarisXMLModifyModel.GetConfigString();
-     return m_xml_config_object;
+    return m_xml_config_object;
  }
  
  //const PDI::Expression& Damaris_cfg::communicator() const
  PDI::Expression Damaris_cfg::communicator() const
  {
-     return m_communicator;
+    return m_communicator;
  }
  
  const unordered_map<std::string, damaris::model::DamarisVarXML>& Damaris_cfg::datasets() const
  {
-     return m_datasets;
+    return m_datasets;
  }
  const unordered_map<std::string, damaris::model::DamarisLayoutXML>& Damaris_cfg::layouts() const
  {
-     return m_layouts;
+    return m_layouts;
  }
  
  const unordered_map<std::string, damaris::model::DamarisParameterXML>& Damaris_cfg::parameters() const
  {
-     return m_parameters;
+    return m_parameters;
  }
 
 const damaris::model::DamarisParameterXML Damaris_cfg::get_parameter_xml(string prm_name) const
@@ -1461,43 +1461,43 @@ const damaris::model::DamarisParameterXML Damaris_cfg::get_parameter_xml(string 
  
  const std::unordered_map<std::string, damaris::model::DamarisStoreXML>& Damaris_cfg::storages() const
  {
-     return m_storages;
+    return m_storages;
  }
  
  const std::unordered_map<std::string, damaris::model::DamarisMeshXML>& Damaris_cfg::meshes() const
  {
-     return m_meshes;
+    return m_meshes;
  }
  
  const std::unordered_map<std::string, damaris::model::DamarisGroupXML>& Damaris_cfg::groups() const
  {
-     return m_groups;
+    return m_groups;
  }
  
  const unordered_map<string, Desc_type>& Damaris_cfg::descs() const
  {
-     return m_descs;
+    return m_descs;
  }
  
  const unordered_map<string, Event_type>& Damaris_cfg::events() const
  {
-     return m_events;
+    return m_events;
  }
  
  const std::unordered_map<std::string, Dataset_Write_Info>& Damaris_cfg::datasets_to_write() const
  {
-     return m_datasets_to_write;
+    return m_datasets_to_write;
  }
  
  const std::unordered_map<std::string, std::pair<std::string, Desc_type>>& Damaris_cfg::parameter_to_update() const
  {
-     return m_parameter_to_update;
+    return m_parameter_to_update;
  }
  
  Dataset_Write_Info Damaris_cfg::get_dataset_write_info(std::string data_name) const
  {
      try{
-         return m_datasets_to_write.at(data_name);
+        return m_datasets_to_write.at(data_name);
      } catch (...) {
          assert(false && "Trying to get inexistant damaris awaited dataset!");
      }
@@ -1506,7 +1506,7 @@ const damaris::model::DamarisParameterXML Damaris_cfg::get_parameter_xml(string 
  std::pair<std::string, Desc_type> Damaris_cfg::get_parameter_to_update_info(std::string data_name) const
  {
      try{
-         return m_parameter_to_update.at(data_name);
+        return m_parameter_to_update.at(data_name);
      } catch (...) {
          assert(false && "Trying to get inexistant damaris awaited dataset!");
      }
@@ -1525,17 +1525,17 @@ const damaris::model::DamarisParameterXML Damaris_cfg::get_parameter_xml(string 
  
  std::string Damaris_cfg::start_on_event() const
  {
-     return m_start_on_event;
+    return m_start_on_event;
  }
  
  std::string Damaris_cfg::stop_on_event() const
  {
-     return m_stop_on_event;
+    return m_stop_on_event;
  }
  
  std::string Damaris_cfg::end_iteration_on_event() const
  {
-     return m_end_iteration_on_event;
+    return m_end_iteration_on_event;
  }
  
 
