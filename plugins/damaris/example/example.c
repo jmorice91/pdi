@@ -169,7 +169,6 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 	PDI_init(PC_get(conf, ".pdi"));
-	PDI_event("init");
 
 	PDI_expose("mpi_comm", &main_comm, PDI_INOUT); // <-- allow plugin to set, returns Damaris client comm
 
@@ -180,8 +179,6 @@ int main(int argc, char* argv[])
 
 	PDI_expose("mpi_rank", &pcoord_1d, PDI_OUT);
 	PDI_expose("mpi_size", &psize_1d, PDI_OUT);
-	//init placed before `PDI_expose("mpi_comm",  &main_comm,  PDI_INOUT);` to use Damaris client comm
-	//PDI_event("init");
 
 	long longval;
 
@@ -252,7 +249,6 @@ int main(int argc, char* argv[])
 		// }
 		//PDI_event("damaris_end_iteration");
 	}
-	PDI_event("finalization");
 	PDI_expose("iter", &ii, PDI_OUT);
 	PDI_expose("main_field", cur, PDI_OUT);
 

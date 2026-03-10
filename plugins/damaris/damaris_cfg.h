@@ -182,7 +182,7 @@ const std::unordered_map<Event_type, std::string> event_names = {
      std::unordered_map<std::string, PDI::Expression> m_layout_expression;
  
      static std::string m_is_client_dataset_name;
-     std::string m_client_comm_get_dataset_name = "";
+     static std::string m_client_comm_get_dataset_name;
      
  
  const std::string XML_CONFIG_TEMPLATE = R"V0G0N(<?xml version="1.0"?>
@@ -281,7 +281,7 @@ const std::unordered_map<Event_type, std::string> event_names = {
      {
         return m_is_client_dataset_name;
      }
-     std::string client_comm_get_dataset_name() const
+     static std::string client_comm_get_dataset_name()
      {
         return m_client_comm_get_dataset_name;
      }

@@ -42,10 +42,10 @@ pdi:
             start: [$iter, '($dsize[0]-2)*$pcoord[0]', '($dsize[1]-2)*$pcoord[1]']
     damaris:  
     
-      on_init: init #or init_on_event
+      #on_init: init #or init_on_event
       #start_on_event: damaris_start
       #end_iteration_on_event: damaris_end_iteration
-      on_finalize: finalization #Or finalize_on_event
+      #on_finalize: finalization #Or finalize_on_event
       communicator: $MPI_COMM_WORLD # pas utilisé actuellement
       architecture: 
         sim_name: example  
