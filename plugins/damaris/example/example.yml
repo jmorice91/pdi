@@ -91,8 +91,9 @@ pdi:
           # damaris "append" file with next iteration
           #block: [...] # To be defined # indice de block à écrire = 0 par default => tout le sous-domain
           # si "architecture/domains" >1 on peut écrire les block de indice 0 à domains-1
-      get_is_client: is_client
-      client_comm_get: mpi_comm   
+      #get_is_client: is_client #Needed only when is_client is used
+      dc_ending_operations: #Will be used in the future to provide couple of instructions to execute at the end of the simulation, for the dedicated cores. MayBe relying on user_code plugin!!?
+      client_comm_get: mpi_comm #Needed to return the Damaris client comm
       
       #Optional config, has a default behavior 
       log:
