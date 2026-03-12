@@ -171,6 +171,8 @@ int main(int argc, char* argv[])
 	//PDI_expose("mpi_comm",  &main_comm,  PDI_INOUT);  // <-- allow plugin to set, returns Damaris client comm
 	damaris_client_comm_get(&main_comm); // <-- returns Damaris client comm
 	
+	// Again, we check that servers have been started properly and that
+	// this process is a client.
    	if((err == DAMARIS_OK || err == DAMARIS_NO_SERVER) && is_client) {
 
 		int psize_1d;
@@ -209,7 +211,7 @@ int main(int argc, char* argv[])
 		assert(dsize[1] % psize[1] == 0);
 		dsize[1] = dsize[1] / psize[1] + 2;
 
-	    	printf("(psize[1] * psize[0] == psize_1d) === (%d * %d == %d) \n", psize[1], psize[0], psize_1d);
+	    printf("(psize[1] * psize[0] == psize_1d) === (%d * %d == %d) \n", psize[1], psize[0], psize_1d);
 		assert(psize[1] * psize[0] == psize_1d);
 
 		int cart_period[2] = {0, 0};
@@ -290,9 +292,6 @@ int main(int argc, char* argv[])
         
 	//PDI_finalize();
 	damaris_finalize();
-
-	//free(cur);
-	//free(next);
 
 	MPI_Finalize();
 	return 0;
