@@ -13,8 +13,8 @@
         <!-- duration in seconds -->
         <parameter name="duration" type="double" value="0.75"/>
         <!-- global [height, width] (excluding boundary conditions or ghosts) -->
-        <parameter name="datasize0" type="int" value="60"/>
-        <parameter name="datasize1" type="int" value="12"/>
+        <parameter name="global_height" type="int" value="60"/>
+        <parameter name="global_width" type="int" value="12"/>
         <!-- degree of parallelism -->
         <parameter name="parallelism_h" type="int" value="3"/>
         <parameter name="parallelism_w" type="int" value="1"/>

@@ -185,10 +185,10 @@ int main(int argc, char* argv[])
 
 		int dsize[2];
 		//PC_int(PC_get(conf, ".datasize[0]"), &longval);
-        damaris_parameter_get("datasize0" , &longval , sizeof(int));
+        damaris_parameter_get("global_height" , &longval , sizeof(int));
 		dsize[0] = longval;
 		//PC_int(PC_get(conf, ".datasize[1]"), &longval);
-        damaris_parameter_get("datasize1" , &longval , sizeof(int));
+        damaris_parameter_get("global_width" , &longval , sizeof(int));
 		dsize[1] = longval;
 
 		int psize[2];
