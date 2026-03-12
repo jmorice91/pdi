@@ -259,9 +259,6 @@ int main(int argc, char* argv[])
 			cur = next;
 			next = tmp;
 
-		    position_main_field[0] = (dsize[0]-2)*pcoord[0];
-		    position_main_field[1] = (dsize[1]-2)*pcoord[1];
-
 			// if (ii >= next_reduce) {
 			// 	double local_time, global_time;
 			// 	local_time = MPI_Wtime() - start;
