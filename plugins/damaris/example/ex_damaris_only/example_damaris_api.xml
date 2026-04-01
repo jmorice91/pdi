@@ -10,8 +10,6 @@
      </architecture>
  
      <data>
-        <!-- duration in seconds -->
-        <parameter name="duration" type="double" value="0.75"/>
         <!-- global [height, width] (excluding boundary conditions or ghosts) -->
         <parameter name="global_height" type="int" value="60"/>
         <parameter name="global_width" type="int" value="12"/>

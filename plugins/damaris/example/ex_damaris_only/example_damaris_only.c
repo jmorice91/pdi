@@ -163,12 +163,10 @@ int main(int argc, char* argv[])
 	   
 	int is_client;
 	
-	//PDI_expose("is_client", &is_client, PDI_INOUT);  // <-- allow plugin to set
 	int err = damaris_start(&is_client);
     	printf("-------------------------------------------------------------------------------------D: :) ;) is_client = %d\n", is_client);
 	
 	MPI_Comm main_comm = MPI_COMM_WORLD;
-	//PDI_expose("mpi_comm",  &main_comm,  PDI_INOUT);  // <-- allow plugin to set, returns Damaris client comm
 	damaris_client_comm_get(&main_comm); // <-- returns Damaris client comm
 	
 	// Again, we check that servers have been started properly and that
@@ -180,30 +178,19 @@ int main(int argc, char* argv[])
 		int pcoord_1d;
 		MPI_Comm_rank(main_comm, &pcoord_1d);
 
-		//PDI_expose("mpi_rank", &pcoord_1d, PDI_OUT);
-		//PDI_expose("mpi_size", &psize_1d, PDI_OUT);
-
 		long longval;
 
 		int dsize[2];
-		//PC_int(PC_get(conf, ".datasize[0]"), &longval);
         damaris_parameter_get("global_height" , &longval , sizeof(int));
 		dsize[0] = longval;
-		//PC_int(PC_get(conf, ".datasize[1]"), &longval);
         damaris_parameter_get("global_width" , &longval , sizeof(int));
 		dsize[1] = longval;
 
 		int psize[2];
-		//PC_int(PC_get(conf, ".parallelism.height"), &longval);
         damaris_parameter_get("parallelism_h" , &longval , sizeof(int));
 		psize[0] = longval;
-		//PC_int(PC_get(conf, ".parallelism.width"), &longval);
         damaris_parameter_get("parallelism_w" , &longval , sizeof(int));
 		psize[1] = longval;
-
-		double duration;
-		//PC_double(PC_get(conf, ".duration"), &duration);
-        damaris_parameter_get("duration" , &duration , sizeof(double));
 
 		// get local & add ghosts to sizes
 		assert(dsize[0] % psize[0] == 0);
@@ -221,10 +208,6 @@ int main(int argc, char* argv[])
 		MPI_Cart_coords(cart_com, pcoord_1d, 2, pcoord);
 
 		int ii = 0;
-		// PDI_expose("iter", &ii, PDI_OUT);
-		// PDI_expose("dsize", dsize, PDI_OUT);
-		// PDI_expose("psize", psize, PDI_OUT);
-		// PDI_expose("pcoord", pcoord, PDI_OUT);
 		int main_field_layout_global0 = psize[0]*(dsize[0]-2);
 		int main_field_layout_global1 = psize[1]*(dsize[1]-2);
         damaris_parameter_set("main_field_layout_global0" , &main_field_layout_global0, sizeof(int)) ;
@@ -243,11 +226,9 @@ int main(int argc, char* argv[])
 	    position_main_field[0] = (dsize[0]-2)*pcoord[0];
 	    position_main_field[1] = (dsize[1]-2)*pcoord[1];
 
-		//PDI_event("main_loop");
 		double start = MPI_Wtime();
 		int next_reduce = 0;
 		for (ii = 0;ii < 10; ++ii) {
-			//PDI_multi_expose("newiter", "iter", &ii, PDI_INOUT, "main_field", cur, PDI_INOUT, NULL);
 			//Iteration write
 		    damaris_set_position("main_field",position_main_field);
 		    damaris_write("main_field",cur);
@@ -258,25 +239,7 @@ int main(int argc, char* argv[])
 			double(*tmp)[dsize[1]] = cur;
 			cur = next;
 			next = tmp;
-
-			// if (ii >= next_reduce) {
-			// 	double local_time, global_time;
-			// 	local_time = MPI_Wtime() - start;
-			// 	MPI_Allreduce(&local_time, &global_time, 1, MPI_DOUBLE, MPI_MAX, main_comm);
-			// 	if (global_time >= duration) {
-			// 		if (0 == pcoord_1d) printf("iter=%7d; time=%7.3f; STOP!!!\n", ii, global_time);
-			// 		break;
-			// 	}
-			// 	int rem_iter = .9 * (duration - global_time) * (ii + 1) / (global_time + 0.1);
-			// 	if (rem_iter < 1) rem_iter = 1;
-			// 	next_reduce = ii + rem_iter;
-			// 	if (0 == pcoord_1d) printf("iter=%7d; time=%7.3f; next_reduce=%7d\n", ii, global_time, next_reduce);
-			// }
-		    //PDI_event("end_iteration");
 		}
-		//PDI_event("finalization");
-		// PDI_expose("iter", &ii, PDI_OUT);
-		//PDI_expose("main_field", cur, PDI_OUT);	
 		//Last write
 	    damaris_set_position("main_field",position_main_field);
 	    damaris_write("main_field",cur);
@@ -287,7 +250,6 @@ int main(int argc, char* argv[])
 		free(next);
 	}
         
-	//PDI_finalize();
 	damaris_finalize();
 
 	MPI_Finalize();
