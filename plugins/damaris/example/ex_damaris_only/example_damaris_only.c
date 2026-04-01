@@ -159,12 +159,14 @@ int main(int argc, char* argv[])
 	}
 
 	// All processes must initialize Damaris with the XML configuration
+	//  - client process = heat simulation process
+	//  - server process = damaris process for writting hdf5 file.
 	damaris_initialize(argv[1], MPI_COMM_WORLD);
 	   
 	int is_client;
 	
 	int err = damaris_start(&is_client);
-    	printf("-------------------------------------------------------------------------------------D: :) ;) is_client = %d\n", is_client);
+    printf("-------------------------------------------------------------------------------------D: :) ;) is_client = %d\n", is_client);
 	
 	MPI_Comm main_comm = MPI_COMM_WORLD;
 	damaris_client_comm_get(&main_comm); // <-- returns Damaris client comm
