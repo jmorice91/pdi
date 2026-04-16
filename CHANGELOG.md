@@ -11,8 +11,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+* Enable plugin `decl_netcdf` in macOS CI
+* added a `ENABLE_BENCHMARKING` flag to cmake to enable running the benchmarks
+  as part of the tests (off by default)
+  [#679](https://github.com/pdidev/pdi/issues/679)
 
 ### Changed
+* benchmarks are not run as part of the test suite by default anymore, one must
+  set `ENABLE_BENCHMARKING` to `ON` in Cmake to re-enable them
 
 ### Deprecated
 
@@ -21,6 +27,51 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 
 ### Security
+
+
+## [1.10.1] - 2026-02-04
+
+### Added
+* Added tests for using an installed PDI
+
+
+## [1.10.0] - 2026-01-31
+
+### Added
+* Add "mock PDI", to allow disabling PDI  while keeping code syntax unchanged
+  [#438](https://github.com/pdidev/pdi/issues/438)
+* Added macOS CI [#556](https://github.com/pdidev/pdi/issues/556)
+
+### Changed
+* Update the version of dependencies according to our policy: oldest supported
+  Debian, Fedora & Ubuntu, as well as spack 0.19. The new requirements are:
+  CMake 3.22, Doxygen 1.9.1, HDF5 1.10.7, mpi4py 3.1.3, NetCDF 4.8.1,
+  numpy 1.21.5, pyyaml 5.4.1, pybind11 2.9.1, Python 3.10.6, and spdlog 1.9.2
+  [#613](https://github.com/pdidev/pdi/issues/613)
+
+### Removed
+* Removed the Deisa plugin that does not match any current version of Deisa
+
+### Fixed
+* Fix an issue where github action wouldn't run due to permission issue
+  [#585](https://github.com/pdidev/pdi/issues/585)
+* Fix a build error in libyaml with recent cmake versions
+  [#593](https://github.com/pdidev/pdi/issues/593)
+* Fix macOS linking issue when installing via root CMakeLists.txt
+  [#565](https://github.com/pdidev/pdi/issues/565)
+* Fix chunking test in decl_hdf5
+  [#588](https://github.com/pdidev/pdi/issues/588)
+* Fix data validation in decl_hdf5 test after write operation
+  [#587](https://github.com/pdidev/pdi/issues/587)
+* Fix default CMAKE_BUILD_TYPE value
+  [#617](https://github.com/pdidev/pdi/issues/617)
+
+
+## [1.9.3] - 2026-01-16
+
+### Fixed
+* Updated embedded versions of paraconf & pybind11 to fix a build issue with
+  recent cmake [#631](https://github.com/pdidev/pdi/issues/631)
 
 
 ## [1.9.2] - 2025-06-13

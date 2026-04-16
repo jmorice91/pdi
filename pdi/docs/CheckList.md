@@ -6,6 +6,7 @@ To publish a small fix as a patch release:
 * make your changes based on the version branch (`v${X}.${Y}`)
 * change the version in `pdi/VERSION`
 * change the version in `pdi/docs/Source_installation.md`
+* change the version in `mock_pdi/PDIConfigVersion.cmake`
 * commit (or better, make a MR) in the version branch
 * merge the version branch into main
 * in the merge commit:
@@ -24,6 +25,7 @@ To publish a new minor or major release:
 * start from the main branch
 * change the version in `pdi/VERSION`
 * change the version in `pdi/docs/Source_installation.md`
+* change the version in `mock_pdi/PDIConfigVersion.cmake`
 * go over all `CHANGELOG.md` files and mark the just released version
 * commit these changes into a new version branch (`v${X}.${Y}`)
 * tag the new release: `git tag -m "PDI release ${X}.${Y}.0" -s "${X}.${Y}.0"`
@@ -42,7 +44,11 @@ To publish a new minor or major release:
 When changing the list of dependencies or just the version of one dependency:
 * update `pdi/docs/Source_installation.md`,
 * update `spack.yaml`,
-* update PDI distribution CMakeLists.txt as well as all CMakeLists.txt actually using it,
+* update PDI distribution CMakeLists.txt as well as all CMakeLists.txt actually
+  using it,
 * update the dockerfiles used for tests,
 * prepare the update of the spack, deb & RPM packages for the next version,
-* change `.github/workflows/*.yml` to use the new docker test images.
+* change `.github/workflows/*.yml` to use the new docker test images,
+* if the new minimum compiler versions support an updated version of C / C++ /
+  Fortran, change this info in `pdi/docs/Source_installation.md` and
+  `pdi/CONTRIBUTING.md` as well as every `c[xx]_std_??` in cmake.

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2015-2024 Commissariat a l'energie atomique et aux energies alternatives (CEA)
+ * Copyright (C) 2015-2026 Commissariat a l'energie atomique et aux energies alternatives (CEA)
  * Copyright (C) 2020-2021 Institute of Bioorganic Chemistry Polish Academy of Science (PSNC)
  * All rights reserved.
  *
@@ -23,930 +23,827 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <unistd.h>
-#include <pdi.h>
+#include <filesystem>
+#include <iostream>
+#include <numeric>
+#include <ranges>
 
-/*
- * Name:                decl_hdf5_test.01
- *
- * Description:         Metatadata export using filename
- */
-TEST(decl_hdf5_test, 01)
+#include <pdi/testing.h>
+
+using PDI::make_random;
+using PDI::random_init;
+using testing::Eq;
+using testing::StartsWith;
+using testing::StrEq;
+
+struct Simple_record {
+	int x;
+	int y;
+	int z;
+	bool operator== (const Simple_record&) const = default;
+
+	void init_from(std::uniform_random_bit_generator auto& gen)
+	{
+		random_init(gen, x);
+		random_init(gen, y);
+		random_init(gen, z);
+	}
+};
+
+std::ostream& operator<< (std::ostream& out, Simple_record const & r)
 {
-	const char* CONFIG_YAML
-		= "logging: trace                \n"
-		  "metadata:                     \n"
-		  "  meta0: int                  \n"
-		  "  meta1: int                  \n"
-		  "  meta2: int                  \n"
-		  "  meta3: int                  \n"
-		  "  meta4: int                  \n"
-		  "data:                         \n"
-		  "  test_var: double            \n"
-		  "plugins:                      \n"
-		  "  decl_hdf5:                  \n"
-		  "    file: ${meta1}.h5         \n"
-		  "    write:                    \n"
-		  "        test_var: ~           \n"
-		  "        meta2: ~              \n";
+	return out << "Simple_record(x=" << r.x << ", y=" << r.y << ", z=" << r.z << ")";
+}
 
-	int value[5] = {5, 4, 3, 2, 1};
-	double test_var = 0;
+struct Complex_record {
+	int id;
+	Simple_record value[4];
+	bool operator== (const Complex_record&) const = default;
 
-	remove("5.h5");
+	void init_from(std::uniform_random_bit_generator auto& gen)
+	{
+		random_init(gen, id);
+		random_init(gen, value);
+	}
+};
 
-	PC_tree_t conf = PC_parse_string(CONFIG_YAML);
-	PDI_init(conf);
+std::ostream& operator<< (std::ostream& out, Complex_record const & r)
+{
+	return out << "Complex_record(id=" << r.id << ", value=" << r.value << ")";
+}
 
+class DeclHdf5: public ::PDI::PdiTest
+{};
+
+/* Metatadata use in filename expression & write on data
+ */
+TEST_F(DeclHdf5, FilenameFromMetaList)
+{
+	InitPdi(PC_parse_string(R"==(
+logging: trace
+metadata: { meta_var: int }
+data: { test_var: double }
+plugins:
+  decl_hdf5:
+    file: "file${meta_var}.h5"
+    write: [ test_var ]
+)=="));
+
+	int const meta_var = 1;
+	PDI_expose("meta_var", &meta_var, PDI_OUT);
+
+	auto const test_var = make_a<double>();
+	PDI_expose("test_var", &test_var, PDI_OUT);
+	EXPECT_TRUE(std::filesystem::exists("file1.h5"));
+}
+
+/* Metatadata use in filename expression & write on data (from mapping)
+ */
+TEST_F(DeclHdf5, FilenameFromMetaMapping)
+{
+	InitPdi(PC_parse_string(R"==(
+logging: trace
+metadata: { meta_var: int }
+data: { test_var: double }
+plugins:
+  decl_hdf5:
+    file: file${meta_var}.h5
+    write: { test_var: ~ }
+)=="));
+
+	int const meta_var = 2;
+	PDI_expose("meta_var", &meta_var, PDI_OUT);
+
+	auto const test_var = make_a<double>();
+	PDI_expose("test_var", &test_var, PDI_OUT);
+	EXPECT_TRUE(std::filesystem::exists("file2.h5"));
+}
+
+/* Metatadata use in filename expression & write on event
+ */
+TEST_F(DeclHdf5, FilenameFromMetaEvent)
+{
+	InitPdi(PC_parse_string(R"==(
+logging: trace
+metadata: { meta_var: int }
+data: { test_var: double }
+plugins:
+  decl_hdf5:
+    file: file${meta_var}.h5
+    on_event: "event"
+    write: { test_var: ~ }
+)=="));
+
+	int const meta_var = 3;
+	PDI_expose("meta_var", &meta_var, PDI_OUT);
+
+	auto const test_var = make_a<double>();
+	PDI_expose("test_var", &test_var, PDI_OUT);
+	EXPECT_FALSE(std::filesystem::exists("file3.h5"));
+
+	PDI_multi_expose("wrong_event", "test_var", &test_var, PDI_OUT, nullptr);
+	EXPECT_FALSE(std::filesystem::exists("file3.h5"));
+
+	PDI_multi_expose("event", "test_var", &test_var, PDI_OUT, nullptr);
+	EXPECT_TRUE(std::filesystem::exists("file3.h5"));
+}
+
+/* Write then read complex structures (record of array of record)
+ */
+TEST_F(DeclHdf5, RecordOfArrayOfRecord)
+{
+	InitPdi(PC_parse_string(R"==(
+logging: trace
+metadata:
+  step: int
+data:
+  complex_record:
+    type: struct
+    members:
+      - id: int
+      - value:
+          type: array
+          size: 4
+          subtype:
+            type: struct
+            members:
+              - x: int
+              - y: int
+              - z: int
+plugins:
+  decl_hdf5:
+    - file: decl_hdf5_test_outer_record.h5
+      write: [complex_record]
+      when: $step=0
+    - file: decl_hdf5_test_outer_record.h5
+      read: [complex_record]
+      when: $step=1
+)=="));
+
+	// write to file
+	int step = 0;
+	PDI_expose("step", &step, PDI_OUT);
+
+	auto const complex_record = make_a<Complex_record>();
+	PDI_expose("complex_record", &complex_record, PDI_OUT);
+
+	// read from file
+	step = 1;
+	PDI_expose("step", &step, PDI_OUT);
+
+	Complex_record complex_record_read;
+	PDI_expose("complex_record", &complex_record_read, PDI_IN);
+	EXPECT_EQ(complex_record, complex_record_read);
+}
+
+/* Write then read a selection of dataset of records
+ */
+TEST_F(DeclHdf5, ArrayOfRecordSelection)
+{
+	InitPdi(PC_parse_string(R"==(
+logging: trace
+metadata:
+  step: int
+types:
+  Complex_record:
+    type: struct
+    members:
+      - id: int
+      - value:
+          type: array
+          size: 4
+          subtype:
+            type: struct
+            members:
+              - x: int
+              - y: int
+              - z: int
+data:
+  array_of_record:
+    type: array
+    size: 4
+    subtype: Complex_record
+  array_of_record_read: Complex_record
+plugins:
+  decl_hdf5:
+    - file: decl_hdf5_test_record_and_selection.h5
+      datasets:
+        array_of_record:
+          type: array
+          size: 2
+          subtype: Complex_record
+      write:
+        array_of_record:
+          dataset: array_of_record
+          # select a subset of the data in memory to write
+          memory_selection: { start: 1, size: 2 }
+      read:
+        array_of_record_read:
+          dataset: array_of_record
+          # select a subset of the data in file to read
+          dataset_selection: { start: 1, size: 1 }
+)=="));
+
+	// write to file
+	auto const array_of_record = make_a<std::array<Complex_record, 4>>();
+	PDI_expose("array_of_record", array_of_record.data(), PDI_OUT);
+
+	// load from file
+	Complex_record array_of_record_read;
+	PDI_expose("array_of_record_read", &array_of_record_read, PDI_IN);
+	// we excluded 1 element on write and 1 on read, so we lost 2
+	EXPECT_EQ(array_of_record[2], array_of_record_read);
+}
+
+/* attribute depend on group
+ */
+TEST_F(DeclHdf5, AttributesGroup)
+{
+	InitPdi(PC_parse_string(R"==(
+logging: trace
+metadata:
+  array_size: int
+data:
+  array_data: { size: $array_size, type: array, subtype: int }
+  group_attr: float
+  dset_attr: {type: array, subtype: int, size: 4}
+  array_data_read: { size: $array_size, type: array, subtype: int }
+  group_attr_read: float
+  dset_attr_read: {type: array, subtype: int, size: 4}
+  expr_attr: int
+plugins:
+  decl_hdf5:
+  - file: decl_hdf5_test_attribute_group.h5
+    datasets:
+      data/array_data: { size: $array_size, type: array, subtype: int }
+    write:
+      array_data:
+        dataset: data/array_data
+        attributes:
+          expr_attr: $array_size
+      dset_attr:
+        attribute: data/array_data#dset_attr_name
+      group_attr:
+        attribute: data#group_attr_name
+    read:
+      array_data_read:
+        dataset: data/array_data
+        attributes:
+          expr_attr: $expr_attr
+      dset_attr_read:
+        attribute: data/array_data#dset_attr_name
+      group_attr_read:
+        attribute: data#group_attr_name
+)=="));
+
+	static constexpr int const array_size = 10;
+	PDI_expose("array_size", &array_size, PDI_OUT);
+
+	auto const array_data = make_a<std::array<int, array_size>>();
+	PDI_expose("array_data", array_data.data(), PDI_OUT);
+
+	auto const group_attr = make_a<float>();
+	PDI_expose("group_attr", &group_attr, PDI_OUT);
+
+	auto const dset_attr = make_a<std::array<int, 4>>();
+	PDI_expose("dset_attr", dset_attr.data(), PDI_OUT);
+
+	float group_attr_read = 0;
+	PDI_expose("group_attr_read", &group_attr_read, PDI_IN);
+	EXPECT_EQ(group_attr, group_attr_read);
+
+	std::array<int, 4> dset_attr_read;
+	PDI_expose("dset_attr_read", dset_attr_read.data(), PDI_IN);
+	EXPECT_EQ(dset_attr, dset_attr_read);
+
+	int expr_attr = 0;
+	std::array<int, array_size> array_data_read;
+	PDI_share("expr_attr", &expr_attr, PDI_IN);
+	PDI_expose("array_data_read", array_data_read.data(), PDI_IN);
+	EXPECT_EQ(array_data, array_data_read);
+	PDI_reclaim("expr_attr");
+	EXPECT_EQ(array_size, expr_attr);
+}
+
+/* attribute depend on data
+ */
+TEST_F(DeclHdf5, AttributesData)
+{
+	//PDI_write
+	InitPdi(PC_parse_string(R"==(
+logging: trace
+metadata:
+  array_size: int
+data:
+  array_data: { size: $array_size, type: array, subtype: int }
+  dset_attr: {type: array, subtype: int, size: 4}
+  size_attr: int
+plugins:
+  decl_hdf5:
+  - file: decl_hdf5_test_attribute_data.h55
+    on_event: "write"
+    write: [array_data, array_data#dset_attr, array_data#size_attr]
+  - file: decl_hdf5_test_attribute_data.h55
+    on_event: "read"
+    read: [array_data, array_data#dset_attr, array_data#size_attr]
+)=="));
+
+	static constexpr int const array_size = 10;
+	PDI_expose("array_size", &array_size, PDI_OUT);
+
+	auto const array_data = make_a<std::array<int, array_size>>();
+	PDI_expose("array_data", array_data.data(), PDI_OUT);
+
+	auto const dset_attr = make_a<std::array<int, 4>>();
 	PDI_multi_expose(
-		"testing",
-		"meta0",
-		&value[0],
+		"write",
+		"size_attr",
+		&array_size,
 		PDI_OUT,
-		"meta1",
-		&value[0],
+		"array_data",
+		array_data.data(),
 		PDI_OUT,
-		"meta2",
-		&value[1],
-		PDI_OUT,
-		"meta3",
-		&value[2],
-		PDI_OUT,
-		"meta4",
-		&value[3],
-		PDI_OUT,
-		"test_var",
-		&test_var,
+		"dset_attr",
+		dset_attr.data(),
 		PDI_OUT,
 		NULL
 	);
 
-	PDI_finalize();
-	PC_tree_destroy(&conf);
-
-	FILE* fp = fopen("5.h5", "r");
-	EXPECT_NE(fp, nullptr) << "File not found. \n";
-	fclose(fp);
-}
-
-/*
- * Name:                decl_hdf5_test.02
- *
- * Description:         outer record
- */
-TEST(decl_hdf5_test, 02)
-{
-	const char* CONFIG_YAML
-		= "logging: trace              \n"
-		  "metadata:                   \n"
-		  "  input: int                \n"
-		  "data:                       \n"
-		  "  outer_record:             \n"
-		  "    type: struct            \n"
-		  "    members:                \n"
-		  "      - id: int             \n"
-		  "      - value:              \n"
-		  "          type: array       \n"
-		  "          size: [2, 2]      \n"
-		  "          subtype:          \n"
-		  "            type: struct    \n"
-		  "            members:        \n"
-		  "              - x: int      \n"
-		  "              - y: int      \n"
-		  "              - z: int      \n"
-		  "plugins:                    \n"
-		  "  decl_hdf5:                \n"
-		  "    - file: test_02.h5      \n"
-		  "      write: [outer_record] \n"
-		  "      when: $input=0        \n"
-		  "    - file: test_02.h5      \n"
-		  "      read: [outer_record]  \n"
-		  "      when: $input=1        \n";
-
-	struct XYZ {
-		int x;
-		int y;
-		int z;
-	};
-
-	struct Record {
-		int id;
-		struct XYZ value[4]; // 2 x 2
-	};
-
-	struct Record outer_record;
-
-	// init data
-	outer_record.id = 24;
-	for (int i = 0; i < 4; i++) {
-		outer_record.value[i].x = -1 * i;
-		outer_record.value[i].y = 2 * i;
-		outer_record.value[i].z = 3 * i;
-	}
-
-	PC_tree_t conf = PC_parse_string(CONFIG_YAML);
-	PDI_init(conf);
-	int input = 0;
-	PDI_expose("input", &input, PDI_OUT);
-	PDI_expose("outer_record", &outer_record, PDI_OUT);
-
-	// reset record
-	outer_record.id = 0;
-	for (int i = 0; i < 4; i++) {
-		outer_record.value[i].x = 0;
-		outer_record.value[i].y = 0;
-		outer_record.value[i].z = 0;
-	}
-
-	// load record from file
-	input = 1;
-	PDI_expose("input", &input, PDI_OUT);
-	PDI_expose("outer_record", &outer_record, PDI_IN);
-
-	// check values
-	printf("%d != %d\n", outer_record.id, 24);
-	ASSERT_EQ(outer_record.id, 24);
-	for (int i = 0; i < 4; i++) {
-		EXPECT_EQ(outer_record.value[i].x, -1 * i);
-		EXPECT_EQ(outer_record.value[i].y, 2 * i);
-		EXPECT_EQ(outer_record.value[i].z, 3 * i);
-	}
-	PDI_finalize();
-	PC_tree_destroy(&conf);
-}
-
-/*
- * Name:                decl_hdf5_test.03
- *
- * Description:         record with dataset_selection and memory_selection
- */
-TEST(decl_hdf5_test, 03)
-{
-	const char* CONFIG_YAML
-		= "logging: trace                             \n"
-		  "metadata:                                  \n"
-		  "  input: int                               \n"
-		  "data:                                      \n"
-		  "  array_of_record:                         \n"
-		  "    type: array                            \n"
-		  "    size: 4                                \n"
-		  "    subtype:                               \n"
-		  "      type: struct                         \n"
-		  "      members:                             \n"
-		  "        - id: int                          \n"
-		  "        - value:                           \n"
-		  "            type: array                    \n"
-		  "            subtype: int                   \n"
-		  "            size: [4, 4]                   \n"
-		  "  array_of_record_read:                    \n"
-		  "    type: array                            \n"
-		  "    size: 2                                \n"
-		  "    subtype:                               \n"
-		  "      type: struct                         \n"
-		  "      members:                             \n"
-		  "        - id: int                          \n"
-		  "        - value:                           \n"
-		  "            type: array                    \n"
-		  "            subtype: int                   \n"
-		  "            size: [4, 4]                   \n"
-		  "plugins:                                   \n"
-		  "  decl_hdf5:                               \n"
-		  "    - file: test_03.h5                     \n"
-		  "      when: $input=0                       \n"
-		  "      datasets:                            \n"
-		  "        data_array:                        \n"
-		  "          type: array                      \n"
-		  "          size: 2                          \n"
-		  "          subtype:                         \n"
-		  "            type: struct                   \n"
-		  "            members:                       \n"
-		  "              - id: int                    \n"
-		  "              - value:                     \n"
-		  "                  type: array              \n"
-		  "                  subtype: int             \n"
-		  "                  size: [4, 4]             \n"
-		  "      write:                               \n"
-		  "        array_of_record:                   \n"
-		  "          dataset: data_array              \n"
-		  "          memory_selection:                \n"
-		  "            size: 2                        \n"
-		  "            start: 1                       \n"
-		  "          dataset_selection:               \n"
-		  "            size: 2                        \n"
-		  "    - file: test_03.h5                     \n"
-		  "      when: $input=1                       \n"
-		  "      read: [array_of_record_read]         \n";
-
-	struct Record {
-		int id;
-		int value[16];
-	};
-
-	struct Record rec[4];
-	// init data
-	for (int i = 0; i < 4; i++) {
-		rec[i].id = i;
-		for (int j = 0; j < 16; j++) {
-			rec[i].value[j] = j + i * 16;
-		}
-	}
-	PC_tree_t conf = PC_parse_string(CONFIG_YAML);
-	PDI_init(conf);
-	int input = 0;
-	PDI_expose("input", &input, PDI_OUT);
-
-	// write record to file
-	PDI_expose("array_of_record", rec, PDI_OUT);
-
-	// load record from file
-	input = 1;
-	PDI_expose("input", &input, PDI_OUT);
-	struct Record rec_read[2];
-	PDI_expose("array_of_record", rec_read, PDI_IN);
-
-	// check values
-	for (int i = 1; i < 3; i++) {
-		EXPECT_EQ(rec[i].id, i);
-		for (int j = 0; j < 16; j++) {
-			EXPECT_EQ(rec[i].value[j], j + i * 16);
-		}
-	}
-	PDI_finalize();
-	PC_tree_destroy(&conf);
-}
-
-/*
- * Name:                decl_hdf5_test.04
- *
- * Description:         attribute
- */
-TEST(decl_hdf5_test, 04)
-{
-	//PDI_write
-
-	const char* CONFIG_YAML
-		= "logging: trace                                                          \n"
-		  "metadata:                                                               \n"
-		  "  array_size: int                                                       \n"
-		  "data:                                                                   \n"
-		  "  array_data: { size: $array_size, type: array, subtype: int }          \n"
-		  "  group_attr: float                                                     \n"
-		  "  dset_attr: {type: array, subtype: int, size: 4}                       \n"
-		  "plugins:                                                                \n"
-		  "  decl_hdf5:                                                            \n"
-		  "    file: decl_hdf5_test_04.h5                                          \n"
-		  "    datasets:                                                           \n"
-		  "      data/array_data: { size: $array_size, type: array, subtype: int } \n"
-		  "    write:                                                              \n"
-		  "      array_data:                                                       \n"
-		  "        dataset: data/array_data                                        \n"
-		  "        attributes:                                                     \n"
-		  "          expr_attr: $array_size                                        \n"
-		  "      dset_attr:                                                        \n"
-		  "        attribute: data/array_data#dset_attr_name                       \n"
-		  "      group_attr:                                                       \n"
-		  "        attribute: data#group_attr_name                                 \n";
-
-	PC_tree_t conf = PC_parse_string(CONFIG_YAML);
-	PDI_init(conf);
-
-	int array_size = 10;
-	int test_array[array_size];
-	for (int i = 0; i < 10; i++) {
-		test_array[i] = i;
-	}
-	PDI_expose("array_size", &array_size, PDI_OUT);
-	PDI_expose("array_data", test_array, PDI_OUT);
-
-	float group_attr = 1.2345f;
-	PDI_expose("group_attr", &group_attr, PDI_OUT);
-
-	int dset_attr[4];
-	for (int i = 0; i < 4; i++) {
-		dset_attr[i] = i;
-	}
-	PDI_expose("dset_attr", dset_attr, PDI_OUT);
-
-	PDI_finalize();
-	PC_tree_destroy(&conf);
-
-	//PDI_read
-
-	CONFIG_YAML
-		= "logging: trace                                                          \n"
-		  "metadata:                                                               \n"
-		  "  array_size: int                                                       \n"
-		  "data:                                                                   \n"
-		  "  array_data: { size: 10, type: array, subtype: int }                   \n"
-		  "  dset_attr: {type: array, subtype: int, size: 4}                       \n"
-		  "  group_attr: float                                                     \n"
-		  "  expr_attr: int                                                        \n"
-		  "plugins:                                                                \n"
-		  "  decl_hdf5:                                                            \n"
-		  "    file: decl_hdf5_test_04.h5                                          \n"
-		  "    datasets:                                                           \n"
-		  "      data/array_data: { size: 10, type: array, subtype: int }          \n"
-		  "    read:                                                               \n"
-		  "      array_data:                                                       \n"
-		  "        dataset: data/array_data                                        \n"
-		  "        attributes:                                                     \n"
-		  "          expr_attr: $expr_attr                                         \n"
-		  "      dset_attr:                                                        \n"
-		  "        attribute: data/array_data#dset_attr_name                       \n"
-		  "      group_attr:                                                       \n"
-		  "        attribute: data#group_attr_name                                 \n";
-
-	conf = PC_parse_string(CONFIG_YAML);
-	PDI_init(conf);
-
-	array_size = 10;
-	for (int i = 0; i < 10; i++) {
-		test_array[i] = 0;
-	}
-	PDI_expose("array_size", &array_size, PDI_OUT);
-
-	group_attr = 0.0f;
-	for (int i = 0; i < 4; i++) {
-		dset_attr[i] = 0;
-	}
-
-	PDI_expose("group_attr", &group_attr, PDI_IN);
-	EXPECT_EQ(group_attr, 1.2345f) << "group_attr invalid value: " << group_attr << " (should be: 1.2345)";
-
-	PDI_expose("dset_attr", dset_attr, PDI_IN);
-	for (int i = 0; i < 4; i++) {
-		EXPECT_EQ(dset_attr[i], i) << "dset_attr[" << i << "] invalid value: " << dset_attr[i] << " (should be: " << i << ")";
-	}
-
-	int expr_attr = 0;
-	PDI_share("expr_attr", &expr_attr, PDI_IN);
-	PDI_expose("array_data", test_array, PDI_IN);
-	for (int i = 0; i < 10; i++) {
-		EXPECT_EQ(test_array[i], i) << "test_array[" << i << "] invalid value: " << test_array[i] << "(should be: " << i << ")";
-	}
-	EXPECT_EQ(expr_attr, 10) << "expr_attr invalid value: " << expr_attr << " (should be: 10)";
-	PDI_reclaim("expr_attr");
-
-	PDI_finalize();
-	PC_tree_destroy(&conf);
-}
-
-/*
- * Name:                decl_hdf5_test.05
- *
- * Description:         attribute testing
- */
-TEST(decl_hdf5_test, 05)
-{
-	//PDI_write
-	const char* CONFIG_YAML
-		= "logging: trace                                                          \n"
-		  "metadata:                                                               \n"
-		  "  array_size: int                                                       \n"
-		  "data:                                                                   \n"
-		  "  array_data: { size: $array_size, type: array, subtype: int }          \n"
-		  "  dset_attr: {type: array, subtype: int, size: 4}                       \n"
-		  "  size_attr: int                                                        \n"
-		  "plugins:                                                                \n"
-		  "  decl_hdf5:                                                            \n"
-		  "    file: decl_hdf5_test_05.h5                                          \n"
-		  "    on_event: \"write\"                                                 \n"
-		  "    write: [array_data, array_data#dset_attr, array_data#size_attr]    \n";
-
-	PC_tree_t conf = PC_parse_string(CONFIG_YAML);
-	PDI_init(conf);
-
-	int array_size = 10;
-	int test_array[array_size];
-	for (int i = 0; i < 10; i++) {
-		test_array[i] = i;
-	}
-	PDI_expose("array_size", &array_size, PDI_OUT);
-	PDI_expose("array_data", test_array, PDI_OUT);
-
-	int dset_attr[4];
-	for (int i = 0; i < 4; i++) {
-		dset_attr[i] = i;
-	}
-	PDI_multi_expose("write", "size_attr", &array_size, PDI_OUT, "array_data", test_array, PDI_OUT, "dset_attr", dset_attr, PDI_OUT, NULL);
-
-	PDI_finalize();
-	PC_tree_destroy(&conf);
-
-	//PDI_read
-	CONFIG_YAML
-		= "logging: trace                                                          \n"
-		  "metadata:                                                               \n"
-		  "  array_size: int                                                       \n"
-		  "data:                                                                   \n"
-		  "  array_data: { size: $array_size, type: array, subtype: int }          \n"
-		  "  dset_attr: {type: array, subtype: int, size: 4}                       \n"
-		  "  size_attr: int                                                        \n"
-		  "plugins:                                                                \n"
-		  "  decl_hdf5:                                                            \n"
-		  "    file: decl_hdf5_test_05.h5                                          \n"
-		  "    on_event: \"read\"                                                  \n"
-		  "    read: [array_data, array_data#dset_attr, array_data#size_attr]     \n";
-
-	conf = PC_parse_string(CONFIG_YAML);
-	PDI_init(conf);
-
-	array_size = 10;
-	for (int i = 0; i < 10; i++) {
-		test_array[i] = 0;
-	}
-	PDI_expose("array_size", &array_size, PDI_OUT);
-
-	float group_attr = 0.0f;
-	for (int i = 0; i < 4; i++) {
-		dset_attr[i] = 0;
-	}
-
 	int size_attr = 0;
-	PDI_multi_expose("read", "size_attr", &size_attr, PDI_IN, "array_data", test_array, PDI_IN, "dset_attr", dset_attr, PDI_IN, NULL);
-
-	EXPECT_EQ(size_attr, 10) << "size_attr invalid value: " << size_attr << " (should be: 10)";
-
-	for (int i = 0; i < 4; i++) {
-		EXPECT_EQ(dset_attr[i], i) << "dset_attr[" << i << "] invalid value: " << dset_attr[i] << " (should be: " << i << ")";
-	}
-
-	for (int i = 0; i < 10; i++) {
-		EXPECT_EQ(test_array[i], i) << "test_array[" << i << "] invalid value: " << test_array[i] << " (should be: " << i << ")";
-	}
-
-	PDI_finalize();
-	PC_tree_destroy(&conf);
+	std::array<int, 4> dset_attr_read;
+	std::array<int, array_size> array_data_read;
+	PDI_multi_expose(
+		"read",
+		"size_attr",
+		&size_attr,
+		PDI_IN,
+		"array_data",
+		array_data_read.data(),
+		PDI_IN,
+		"dset_attr",
+		dset_attr_read.data(),
+		PDI_IN,
+		NULL
+	);
+	EXPECT_EQ(array_size, size_attr);
+	EXPECT_EQ(dset_attr, dset_attr_read);
+	EXPECT_EQ(array_data, array_data_read);
 }
 
-/*
- * Name:                decl_hdf5_test.06
- *
- * Description:         read dataset size before dataset itself
+/* read dataset size before dataset itself
  */
-TEST(decl_hdf5_test, 06)
+TEST_F(DeclHdf5, SizeOf)
 {
 	//PDI_write
-	const char* CONFIG_YAML
-		= "logging: trace                                                          \n"
-		  "data:                                                                   \n"
-		  "  array_data: { size: 10, type: array, subtype: int }                   \n"
-		  "  matrix_data: { size: [10, 10], type: array, subtype: float }          \n"
-		  "plugins:                                                                \n"
-		  "  decl_hdf5:                                                            \n"
-		  "    file: decl_hdf5_test_06.h5                                          \n"
-		  "    write: [array_data, matrix_data]                                    \n";
+	InitPdi(PC_parse_string(R"==(
+logging: trace
+metadata:
+  step: int
+data:
+  array_data_size: int64
+  array_data: { size: 10, type: array, subtype: int }
+  matrix_data_size: { size: 2, type: array, subtype: int64 }
+  matrix_data: { size: [10, 10], type: array, subtype: float }
+plugins:
+  decl_hdf5:
+  - file: decl_hdf5_test_read_dataset_size_before_dataset_itself.h5
+    when: $step=0
+    write: [array_data, matrix_data]
+  - file: decl_hdf5_test_read_dataset_size_before_dataset_itself.h5
+    when: $step
+    read:
+      array_data_size:
+        size_of: array_data
+      matrix_data_size:
+        size_of: matrix_data
+  - file: decl_hdf5_test_read_dataset_size_before_dataset_itself.h5
+    on_event: "read_size"
+    read:
+      array_data_size:
+        size_of: array_data
+      matrix_data_size:
+        size_of: matrix_data)=="));
 
-	PC_tree_t conf = PC_parse_string(CONFIG_YAML);
-	PDI_init(conf);
+	int step = 0;
+	PDI_expose("step", &step, PDI_OUT);
 
-	int array_data[10];
-	for (int i = 0; i < 10; i++) {
-		array_data[i] = i;
-	}
-	PDI_expose("array_data", array_data, PDI_OUT);
+	auto const array_data = make_a<std::array<int, 10>>();
+	PDI_expose("array_data", array_data.data(), PDI_OUT);
 
-	int matrix_data[10][10];
-	for (int i = 0; i < 10; i++) {
-		for (int j = 0; j < 10; j++) {
-			matrix_data[i][j] = 10 * i + j;
-		}
-	}
-	PDI_expose("matrix_data", matrix_data, PDI_OUT);
+	auto const matrix_data = make_a<std::array<int[10], 10>>();
+	PDI_expose("matrix_data", matrix_data.data(), PDI_OUT);
 
-	PDI_finalize();
-	PC_tree_destroy(&conf);
-
-	//PDI_read
-	CONFIG_YAML
-		= "logging: trace                                                          \n"
-		  "metadata:                                                               \n"
-		  "  input: int                                                            \n"
-		  "data:                                                                   \n"
-		  "  array_data_size: int64                                                \n"
-		  "  matrix_data_size: { size: 2, type: array, subtype: int64 }            \n"
-		  "plugins:                                                                \n"
-		  "  decl_hdf5:                                                            \n"
-		  "    - file: decl_hdf5_test_06.h5                                        \n"
-		  "      when: $input                                                      \n"
-		  "      read:                                                             \n"
-		  "        array_data_size:                                                \n"
-		  "          size_of: array_data                                           \n"
-		  "        matrix_data_size:                                               \n"
-		  "          size_of: matrix_data                                          \n"
-		  "    - file: decl_hdf5_test_06.h5                                        \n"
-		  "      on_event: \"read_size\"                                           \n"
-		  "      read:                                                             \n"
-		  "        array_data_size:                                                \n"
-		  "          size_of: array_data                                           \n"
-		  "        matrix_data_size:                                               \n"
-		  "          size_of: matrix_data                                          \n";
-
-	conf = PC_parse_string(CONFIG_YAML);
-	PDI_init(conf);
-
-	int input = 1;
-	PDI_expose("input", &input, PDI_OUT);
+	step = 1;
+	PDI_expose("step", &step, PDI_OUT);
 
 	long array_size = 0;
-	long matrix_size[2] = {0, 0};
 	PDI_expose("array_data_size", &array_size, PDI_IN);
-	PDI_expose("matrix_data_size", matrix_size, PDI_IN);
+	EXPECT_EQ(10, array_size);
 
-	EXPECT_EQ(array_size, 10) << "array_size invalid value: " << array_size << " (should be: 10)";
-	EXPECT_TRUE(matrix_size[0] == 10 || matrix_size[1] == 10)
-		<< "matrix_size invalid value: [" << matrix_size[0] << ", " << matrix_size[1] << "] (should be: [10, 10]";
+	std::array<long, 2> matrix_size = {};
+	PDI_expose("matrix_data_size", matrix_size.data(), PDI_IN);
+	EXPECT_EQ(10, matrix_size[0]);
+	EXPECT_EQ(10, matrix_size[1]);
 
 	// now with event
-	input = 0;
-	PDI_expose("input", &input, PDI_OUT);
+	step = 2;
+	PDI_expose("step", &step, PDI_OUT);
 
-	array_size = 0;
-	matrix_size[0] = 0;
-	matrix_size[1] = 0;
-	PDI_multi_expose("read_size", "array_data_size", &array_size, PDI_IN, "matrix_data_size", matrix_size, PDI_IN, NULL);
-
-	EXPECT_EQ(array_size, 10) << "array_size invalid value: " << array_size << " (should be: 10)";
-	EXPECT_TRUE(matrix_size[0] == 10 || matrix_size[1] == 10)
-		<< "matrix_size invalid value: [" << matrix_size[0] << ", " << matrix_size[1] << "] (should be: [10, 10]";
-
-	PDI_finalize();
-	PC_tree_destroy(&conf);
+	long array_size_event = 0;
+	std::array<long, 2> matrix_size_event;
+	PDI_multi_expose("read_size", "array_data_size", &array_size_event, PDI_IN, "matrix_data_size", matrix_size_event.data(), PDI_IN, nullptr);
+	EXPECT_EQ(10, array_size_event);
+	EXPECT_EQ(10, matrix_size_event[0]);
+	EXPECT_EQ(10, matrix_size_event[1]);
 }
 
-/*
- * Name:                decl_hdf5_test.07
- *
- * Description:         different dimension of data and dataset
+/* different dimension of data and dataset
  */
-TEST(decl_hdf5_test, 07)
+TEST_F(DeclHdf5, DifferentDim)
 {
 	//PDI_write
-	const char* CONFIG_YAML
-		= "logging: trace                                                 \n"
-		  "data:                                                          \n"
-		  "  scalar_data: double                                          \n"
-		  "  array_data: { size: [8, 8], type: array, subtype: int }      \n"
-		  "plugins:                                                       \n"
-		  "  decl_hdf5:                                                   \n"
-		  "    file: decl_hdf5_test_07.h5                                 \n"
-		  "    datasets:                                                  \n"
-		  "      scalar_data: {type: array, subtype: double, size: 1}     \n"
-		  "      array_data: {type: array, subtype: int, size: [4, 4, 4]} \n"
-		  "    write: [scalar_data, array_data]                           \n";
+	InitPdi(PC_parse_string(R"==(
+logging: trace
+data:
+  scalar_data: double
+  array_data: { size: [8, 8], type: array, subtype: int }
+plugins:
+  decl_hdf5:
+    file: decl_hdf5_test_different_dim_of_data_and_dataset.h5
+    datasets:
+      scalar_data: {type: array, subtype: double, size: 1}
+      array_data: {type: array, subtype: int, size: [4, 4, 4]}
+    write: [scalar_data, array_data]
+)=="));
 
-	PC_tree_t conf = PC_parse_string(CONFIG_YAML);
-	PDI_init(conf);
-
-	double scalar_data = 1.2345;
+	auto const scalar_data = make_a<double>();
 	PDI_expose("scalar_data", &scalar_data, PDI_OUT);
 
-	int array_data[8][8];
-	for (int i = 0; i < 8; i++) {
-		for (int j = 0; j < 8; j++) {
-			array_data[i][j] = i * 8 + j;
-		}
-	}
+	auto const array_data = make_a<std::array<std::array<int, 8>, 8>>();
+	PDI_expose("array_data", array_data.data(), PDI_OUT);
 
-	PDI_expose("array_data", array_data, PDI_OUT);
-
-	PDI_finalize();
-	PC_tree_destroy(&conf);
+	FinalizePdi();
 
 	//PDI_read
-	CONFIG_YAML
-		= "logging: trace                                                 \n"
-		  "data:                                                          \n"
-		  "  scalar_data: double                                          \n"
-		  "  array_data: { size: [8, 8], type: array, subtype: int }      \n"
-		  "plugins:                                                       \n"
-		  "  decl_hdf5:                                                   \n"
-		  "    file: decl_hdf5_test_07.h5                                 \n"
-		  "    datasets:                                                  \n"
-		  "      scalar_data: {type: array, subtype: double, size: 1}     \n"
-		  "      array_data: {type: array, subtype: int, size: [4, 4, 4]} \n"
-		  "    read: [scalar_data, array_data]                            \n";
+	InitPdi(PC_parse_string(R"==(
+logging: trace
+data:
+  scalar_data: double
+  array_data: { size: [8, 8], type: array, subtype: int }
+plugins:
+  decl_hdf5:
+    file: decl_hdf5_test_different_dim_of_data_and_dataset.h5
+    datasets:
+      scalar_data: {type: array, subtype: double, size: 1}
+      array_data: {type: array, subtype: int, size: [4, 4, 4]}
+    read: [scalar_data, array_data]
+)=="));
 
-	conf = PC_parse_string(CONFIG_YAML);
-	PDI_init(conf);
+	double scalar_data_read = 0;
+	PDI_expose("scalar_data", &scalar_data_read, PDI_IN);
+	EXPECT_EQ(scalar_data, scalar_data_read);
 
-	scalar_data = 0;
-	PDI_expose("scalar_data", &scalar_data, PDI_IN);
-	EXPECT_EQ(scalar_data, 1.2345) << "Wrong value of scalar_data: " << scalar_data << " != 1.2345";
-
-	for (int i = 0; i < 8; i++) {
-		for (int j = 0; j < 8; j++) {
-			array_data[i][j] = 0;
-		}
-	}
-
-	PDI_expose("array_data", array_data, PDI_IN);
-
-	for (int i = 0; i < 8; i++) {
-		for (int j = 0; j < 8; j++) {
-			EXPECT_EQ(array_data[i][j], i * 8 + j) << "Wrong value of array_data[" << i << "][" << j << "]: " << array_data[i][j]
-												   << " != " << i * 8 + j;
-		}
-	}
-
-	PDI_finalize();
-	PC_tree_destroy(&conf);
+	std::array<std::array<int, 8>, 8> array_data_read = {};
+	PDI_expose("array_data", array_data_read.data(), PDI_IN);
+	EXPECT_EQ(array_data, array_data_read);
 }
 
-/*
- * Name:                decl_hdf5_test.08
- *
- * Description:         
+/* Test of the various collision policies
  */
-//  TEST(decl_hdf5_test, 08) {
-
-// 	//PDI write
-// 		const char* CONFIG_YAML =
-// 			"logging: trace                                                 \n"
-// 			"data:                                                          \n"
-// 			"  array_data: { size: 10, type: array, subtype: int }          \n"
-// 			"plugins:                                                       \n"
-// 			"  decl_hdf5:                                                   \n"
-// 			"    file: decl_hdf5_test_10.h5                                 \n"
-// 			// "    datasets:                                                  \n"
-// 			// "      array_data: {type: array, subtype: int, size: 10}        \n"
-// 			"    write:                                                     \n"
-// 			"      array_data:                                              \n"
-// 			"        - memory_selection:                                    \n"
-// 			"            size: 10                                           \n"
-// 			"          dataset_selection:                                   \n"
-// 			"            size: 10                                           \n"
-// 			;
-
-// 		PC_tree_t conf = PC_parse_string(CONFIG_YAML);
-// 		PDI_init(conf);
-
-// 		int test_array[10];
-// 		for (int i = 0; i < 10; i++) {
-// 			test_array[i] = i;
-// 		}
-
-// 		PDI_expose("array_data", test_array, PDI_OUT);
-
-// 		PDI_finalize();
-// 		PC_tree_destroy(&conf);
-
-// 	//PDI read
-// 		CONFIG_YAML =
-// 			"logging: trace                                                 \n"
-// 			"data:                                                          \n"
-// 			"  array_data: { size: 10, type: array, subtype: int }          \n"
-// 			"plugins:                                                       \n"
-// 			"  decl_hdf5:                                                   \n"
-// 			"    file: decl_hdf5_test_10.h5                                 \n"
-// 			"    read: [array_data]                                         \n"
-// 			;
-
-// 		PC_tree_t conf = PC_parse_string(CONFIG_YAML);
-// 		PDI_init(conf);
-
-// 		test_array[10];
-// 		for (int i = 0; i < 10; i++) {
-// 			test_array[i] = 0;
-// 		}
-// 		PDI_expose("array_data", test_array, PDI_IN);
-
-// 		for (int i = 0; i < 10; i++) {
-// 			if (test_array[i] != i) {
-// 				fprintf(stderr, "[%d] %d != %d\n ", i, test_array[i], i);
-// 				return 1;
-// 			}
-// 		}
-
-// 		PDI_finalize();
-// 		PC_tree_destroy(&conf);
-
-// 	int status = PDI_write();
-// 	ASSERT_EQ (status, 0) << "Status Error - PDI_write" << status;
-
-// 	status = PDI_read();
-// 	ASSERT_EQ (status, 0) << "Status Error - PDI_write" << status;
-// }
-
-
-
-/*
- * Name:                decl_hdf5_test.09
- *
- * Description:         colission policy
- */
-TEST(decl_hdf5_test, 08)
+TEST_F(DeclHdf5, Collision)
 {
-	const char* CONFIG_YAML
-		= "logging: trace                                                 \n"
-		  "data:                                                          \n"
-		  "  scalar_data: int                                             \n"
-		  "  array_data: { size: [4, 4], type: array, subtype: int }      \n"
-		  "plugins:                                                       \n"
-		  "  decl_hdf5:                                                   \n"
-		  "    - file: decl_hdf5_test_08.h5                               \n"
-		  "      on_event: init                                           \n"
-		  "      datasets:                                                \n"
-		  "        array_data: {type: array, subtype: int, size: [4, 4]}  \n"
-		  "      write: [array_data]                                      \n"
-		  "    - file: decl_hdf5_test_08.h5                               \n"
-		  "      collision_policy: skip                                   \n"
-		  "      on_event: skip                                           \n"
-		  "      datasets:                                                \n"
-		  "        array_data: {type: array, subtype: int, size: [4, 4]}  \n"
-		  "      write: [array_data]                                      \n"
-		  "    - file: decl_hdf5_test_08.h5                               \n"
-		  "      collision_policy: write_into                             \n"
-		  "      on_event: write_into                                     \n"
-		  "      datasets:                                                \n"
-		  "        scalar_data: int                                       \n"
-		  "        array_data: {type: array, subtype: int, size: [4, 4]}  \n"
-		  "      write: [scalar_data, array_data]                         \n"
-		  "    - file: decl_hdf5_test_08.h5                               \n"
-		  "      collision_policy: replace                                \n"
-		  "      on_event: replace                                        \n"
-		  "      datasets:                                                \n"
-		  "        array_data: {type: array, subtype: int, size: [4, 4]}  \n"
-		  "      write: [array_data]                                      \n"
-		  "    - file: decl_hdf5_test_08.h5                               \n"
-		  "      collision_policy: write_into                             \n"
-		  "      on_event: append                                         \n"
-		  "      datasets:                                                \n"
-		  "        scalar_data: int                                       \n"
-		  "      write:                                                   \n"
-		  "        scalar_data:                                           \n"
-		  "          collision_policy: error                              \n"
-		  "    - file: decl_hdf5_test_08.h5                               \n"
-		  "      collision_policy: error                                  \n"
-		  "      on_event: error                                          \n"
-		  "      datasets:                                                \n"
-		  "        array_data: {type: array, subtype: int, size: [4, 4]}  \n"
-		  "      write: [array_data]                                      \n"
-		  "    - file: decl_hdf5_test_08.h5                               \n"
-		  "      on_event: read                                           \n"
-		  "      datasets:                                                \n"
-		  "        array_data: {type: array, subtype: int, size: [4, 4]}  \n"
-		  "      read: [array_data]                                       \n"
-		  "    - file: decl_hdf5_test_08.h5                               \n"
-		  "      on_event: read_scalar                                    \n"
-		  "      datasets:                                                \n"
-		  "        scalar_data: int                                       \n"
-		  "      read: [scalar_data]                                      \n";
+	InitPdi(PC_parse_string(R"==(
+logging: trace
+data:
+  scalar_data: int
+  array_data: { size: [4, 4], type: array, subtype: int }
+plugins:
+  decl_hdf5:
+    - file: decl_hdf5_test_collision_policy.h5
+      on_event: init
+      write: [array_data]
+    - file: decl_hdf5_test_collision_policy.h5
+      collision_policy: skip
+      on_event: skip
+      write: [array_data]
+    - file: decl_hdf5_test_collision_policy.h5
+      collision_policy: write_into
+      on_event: write_into
+      write: [scalar_data, array_data]
+    - file: decl_hdf5_test_collision_policy.h5
+      collision_policy: replace
+      on_event: replace
+      write: [array_data]
+    - file: decl_hdf5_test_collision_policy.h5
+      collision_policy: write_into
+      on_event: append
+      write:
+        scalar_data:
+          collision_policy: error
+    - file: decl_hdf5_test_collision_policy.h5
+      collision_policy: error
+      on_event: error
+      write: [array_data]
+    - file: decl_hdf5_test_collision_policy.h5
+      on_event: read
+      read: [array_data]
+    - file: decl_hdf5_test_collision_policy.h5
+      on_event: read_scalar
+      read: [scalar_data]
+)=="));
 
-	PC_tree_t conf = PC_parse_string(CONFIG_YAML);
-	PDI_init(conf);
+	// INIT => array_data = array_data_1
+	auto const array_data_1 = make_a<std::array<std::array<int, 4>, 4>>();
+	PDI_multi_expose("init", "array_data", array_data_1.data(), PDI_OUT, nullptr);
 
-	// INIT
-	int array_data[4][4];
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			array_data[i][j] = 0;
-		}
+	// SKIP => array_data already present, do nothing
+	auto const array_data_2 = make_a<std::array<std::array<int, 4>, 4>>();
+	PDI_multi_expose("skip", "array_data", array_data_2.data(), PDI_OUT, nullptr);
+
+	{ // check that array_data == array_data_pos
+		std::array<std::array<int, 4>, 4> array_data_read;
+		PDI_multi_expose("read", "array_data", array_data_read.data(), PDI_IN, nullptr);
+		EXPECT_EQ(array_data_1, array_data_read);
 	}
 
-	PDI_multi_expose("init", "array_data", array_data, PDI_OUT, NULL);
+	// WRITE_INTO => scalar_data = scalar_data_val; array_data = array_data_3
+	auto const scalar_data_val = make_a<int>();
+	auto const array_data_3 = make_a<std::array<std::array<int, 4>, 4>>();
+	PDI_multi_expose("write_into", "scalar_data", &scalar_data_val, PDI_OUT, "array_data", array_data_3.data(), PDI_OUT, nullptr);
 
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			array_data[i][j] = 1;
-		}
-	}
-
-	// SKIP
-	PDI_multi_expose("skip", "array_data", array_data, PDI_OUT, NULL);
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			array_data[i][j] = -1;
-		}
-	}
-	PDI_multi_expose("read", "array_data", array_data, PDI_IN, NULL);
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			if (array_data[i][j] != 0) {
-				printf("array_data[%d][%d] = %d, should be: 0", i, j, array_data[i][j]);
-				PDI_finalize();
-				PC_tree_destroy(&conf);
-				FAIL();
-			}
-		}
+	{ // check that scalar_data == scalar_data_val
+		int scalar_data_read = 0;
+		PDI_multi_expose("read_scalar", "scalar_data", &scalar_data_read, PDI_IN, nullptr);
+		EXPECT_EQ(scalar_data_val, scalar_data_read);
 	}
 
-	// WRITE_INTO
-	int scalar_data = 42;
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			array_data[i][j] = 2;
-		}
-	}
-	PDI_multi_expose("write_into", "scalar_data", &scalar_data, PDI_OUT, "array_data", array_data, PDI_OUT, NULL);
-	scalar_data = -1;
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			array_data[i][j] = -1;
-		}
-	}
-	PDI_multi_expose("read_scalar", "scalar_data", &scalar_data, PDI_IN, NULL);
-	if (scalar_data != 42) {
-		printf("scalar_data = %d, should be: 42", scalar_data);
-		PDI_finalize();
-		PC_tree_destroy(&conf);
-		FAIL();
-	}
-	PDI_multi_expose("read", "array_data", array_data, PDI_IN, NULL);
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			if (array_data[i][j] != 2) {
-				printf("array_data[%d][%d] = %d, should be: 2", i, j, array_data[i][j]);
-				PDI_finalize();
-				PC_tree_destroy(&conf);
-				FAIL();
-			}
-		}
+	{ // check that array_data == array_data_3
+		std::array<std::array<int, 4>, 4> array_data_read;
+		PDI_multi_expose("read", "array_data", array_data_read.data(), PDI_IN, nullptr);
+		EXPECT_EQ(array_data_3, array_data_read);
 	}
 
-	// REPLACE
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			array_data[i][j] = 3;
-		}
-	}
-	PDI_multi_expose("replace", "array_data", array_data, PDI_OUT, NULL);
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			array_data[i][j] = -1;
-		}
-	}
-	PDI_multi_expose("read", "array_data", array_data, PDI_IN, NULL);
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			if (array_data[i][j] != 3) {
-				printf("array_data[%d][%d] = %d, should be: 3", i, j, array_data[i][j]);
-				PDI_finalize();
-				PC_tree_destroy(&conf);
-				FAIL();
-			}
-		}
-	}
-	PDI_errhandler(PDI_NULL_HANDLER);
-	PDI_status_t status = PDI_multi_expose("read_scalar", "scalar_data", &scalar_data, PDI_IN, NULL);
-	if (status == PDI_OK) {
-		printf("replace: status = %d, should not be: 0 (PDI_OK)", status);
-		PDI_finalize();
-		PC_tree_destroy(&conf);
-		FAIL();
-	}
-	PDI_errhandler(PDI_ASSERT_HANDLER);
+	// REPLACE => array_data = array_data_4; removes scalar_data
+	auto const array_data_4 = make_a<std::array<std::array<int, 4>, 4>>();
+	PDI_multi_expose("replace", "array_data", array_data_4.data(), PDI_OUT, nullptr);
 
-	// APPEND
-	scalar_data = 42;
-	PDI_multi_expose("append", "scalar_data", &scalar_data, PDI_OUT, NULL);
-	scalar_data = -1;
-	PDI_multi_expose("read_scalar", "scalar_data", &scalar_data, PDI_IN, NULL);
-	if (scalar_data != 42) {
-		printf("scalar_data = %d, should be: 42", scalar_data);
-		PDI_finalize();
-		PC_tree_destroy(&conf);
-		FAIL();
-	}
-	PDI_errhandler(PDI_NULL_HANDLER);
-	status = PDI_multi_expose("append", "scalar_data", &scalar_data, PDI_OUT, NULL);
-	if (status == PDI_OK) {
-		printf("append: status = %d, should not be: 0 (PDI_OK)", status);
-		PDI_finalize();
-		PC_tree_destroy(&conf);
-		FAIL();
-	}
-	PDI_errhandler(PDI_ASSERT_HANDLER);
-
-	// ERROR
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			array_data[i][j] = 4;
-		}
-	}
-	PDI_errhandler(PDI_NULL_HANDLER);
-	status = PDI_multi_expose("error", "array_data", array_data, PDI_OUT, NULL);
-	if (status == PDI_OK) {
-		printf("error: status = %d, should not be: 0 (PDI_OK)", status);
-		PDI_finalize();
-		PC_tree_destroy(&conf);
-		FAIL();
+	{ // check that array_data == array_data_4
+		std::array<std::array<int, 4>, 4> array_data_read;
+		PDI_multi_expose("read", "array_data", array_data_read.data(), PDI_IN, nullptr);
+		EXPECT_EQ(array_data_4, array_data_read);
 	}
 
-	PDI_multi_expose("read", "array_data", array_data, PDI_IN, NULL);
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			if (array_data[i][j] != 3) {
-				printf("array_data[%d][%d] = %d, should be: 4", i, j, array_data[i][j]);
-				PDI_finalize();
-				PC_tree_destroy(&conf);
-				FAIL();
-			}
-		}
+	{ // check that scalar_data is missing
+		int scalar_data_read = 0;
+		EXPECT_CALL(
+			*this,
+			PdiError(
+				Eq(PDI_ERR_SYSTEM),
+				StartsWith("Error while triggering event `read_scalar': "
+		                   "System_error: Cannot open `scalar_data' dataset object 'scalar_data' doesn't exist")
+			)
+		);
+		PDI_multi_expose("read_scalar", "scalar_data", &scalar_data_read, PDI_IN, nullptr);
 	}
-	PDI_errhandler(PDI_ASSERT_HANDLER);
 
-	PDI_finalize();
-	PC_tree_destroy(&conf);
+	// APPEND => scalar_data = scalar_data_val
+	PDI_multi_expose("append", "scalar_data", &scalar_data_val, PDI_OUT, nullptr);
+
+	{ // check that scalar_data == scalar_data_val
+		int scalar_data_read = 0;
+		PDI_multi_expose("read_scalar", "scalar_data", &scalar_data_read, PDI_IN, nullptr);
+		EXPECT_EQ(scalar_data_val, scalar_data_read);
+	}
+
+	{ // check that array_data == array_data_4
+		std::array<std::array<int, 4>, 4> array_data_read;
+		PDI_multi_expose("read", "array_data", array_data_read.data(), PDI_IN, nullptr);
+		EXPECT_EQ(array_data_4, array_data_read);
+	}
+
+	// APPEND => error (scalar_data already exists)
+	EXPECT_CALL(
+		*this,
+		PdiError(
+			Eq(PDI_ERR_SYSTEM),
+			StrEq("Error while triggering event `append': System_error: Dataset collision `scalar_data': Dataset already exists")
+		)
+	);
+	auto const scalar_data_2 = make_a<int>();
+	PDI_multi_expose("append", "scalar_data", &scalar_data_2, PDI_OUT, nullptr);
+
+	// ERROR => error (file already exists)
+	EXPECT_CALL(
+		*this,
+		PdiError(
+			Eq(PDI_ERR_SYSTEM),
+			StrEq("Error while triggering event `error': System_error: Filename collision `decl_hdf5_test_collision_policy.h5': File already exists")
+		)
+	);
+	auto const array_data_5 = make_a<std::array<std::array<int, 4>, 4>>();
+	PDI_multi_expose("error", "array_data", array_data_5.data(), PDI_OUT, nullptr);
+
+	{ // check that scalar_data == scalar_data_val
+		int scalar_data_read = 0;
+		PDI_multi_expose("read_scalar", "scalar_data", &scalar_data_read, PDI_IN, nullptr);
+		EXPECT_EQ(scalar_data_val, scalar_data_read);
+	}
+
+	{ // check that array_data == array_data_4
+		std::array<std::array<int, 4>, 4> array_data_read;
+		PDI_multi_expose("read", "array_data", array_data_read.data(), PDI_IN, nullptr);
+		EXPECT_EQ(array_data_4, array_data_read);
+	}
+}
+
+/* test the creation of groups define by differents regex
+ */
+TEST_F(DeclHdf5, CreateGroupsWithRegexes)
+{
+	InitPdi(PC_parse_string(R"==(
+logging: trace
+data:
+  array_01: { type: array, size: 3, subtype: int }
+  array_02: { type: array, size: 3, subtype: int }
+  array_03: { type: array, size: 3, subtype: int }
+  array_01_read: { type: array, size: 3, subtype: int }
+  array_02_read: { type: array, size: 3, subtype: int }
+  array_03_read: { type: array, size: 3, subtype: int }
+metadata:
+  index: int
+plugins:
+  decl_hdf5:
+  - file: decl_hdf5_test_create_different_groups_with_regex.h5
+    datasets:
+      group/lion_array_data: { type: array, size: 5, subtype: int }
+      group[0-9]+/dog_array_data: { type: array, size: 5, subtype: int }
+      group_second.*/cat_array_data: { type: array, size: 5, subtype: int }
+    write:
+      array_01:
+        dataset: 'group${index}/dog_array_data'
+        dataset_selection: { start: 1, size: 3 }
+      array_02:
+        dataset: group_second_TRY/cat_array_data
+        dataset_selection: { start: 1, size: 3 }
+      array_03:
+        dataset: group/lion_array_data
+        dataset_selection: { start: 1, size: 3 }
+    read:
+      array_01_read:
+        dataset: 'group${index}/dog_array_data'
+        dataset_selection: { start: 1, size: 3 }
+      array_02_read:
+        dataset: group_second_TRY/cat_array_data
+        dataset_selection: { start: 1, size: 3 }
+      array_03_read:
+        dataset: group/lion_array_data
+        dataset_selection: { start: 1, size: 3 }
+)=="));
+
+	int index = 123;
+	PDI_expose("index", &index, PDI_OUT);
+
+	auto const array_01 = make_a<std::array<int, 3>>();
+	PDI_expose("array_01", array_01.data(), PDI_OUT);
+
+	auto const array_02 = make_a<std::array<int, 3>>();
+	PDI_expose("array_02", array_02.data(), PDI_OUT);
+
+	auto const array_03 = make_a<std::array<int, 3>>();
+	PDI_expose("array_03", array_03.data(), PDI_OUT);
+
+	std::array<int, 3> array_01_read;
+	PDI_expose("array_01_read", array_01_read.data(), PDI_IN);
+	EXPECT_EQ(array_01, array_01_read);
+
+	std::array<int, 3> array_02_read;
+	PDI_expose("array_02_read", array_02_read.data(), PDI_IN);
+	EXPECT_EQ(array_02, array_02_read);
+
+	std::array<int, 3> array_03_read;
+	PDI_expose("array_03_read", array_03_read.data(), PDI_IN);
+	EXPECT_EQ(array_03, array_03_read);
+}
+
+/* creating different groups defined by the same regex and depended on an index
+ */
+TEST_F(DeclHdf5, CreateMultipleGroupsFromOneRegex)
+{
+	InitPdi(PC_parse_string(R"==(
+logging: trace
+metadata:
+  index: int
+data:
+  array_data: { type: array, size: 3, subtype: int }
+  array_data_read: { type: array, size: 3, subtype: int }
+plugins:
+  decl_hdf5:
+    file: decl_hdf5_test_create_groups_that_depend_on_index.h5
+    datasets:
+      group[0-9]+/array_data: { type: array, size: 5, subtype: int }
+    write:
+      array_data:
+        dataset: 'group${index}/array_data'
+        dataset_selection: { start: 1, size: 3 }
+    read:
+      array_data_read:
+        dataset: 'group${index}/array_data'
+        dataset_selection: { start: 1, size: 3 }
+)=="));
+
+	auto const array_data = make_a<std::array<std::array<int, 3>, 3>>();
+	for (int index = 0; index < std::size(array_data); ++index) {
+		PDI_expose("index", &index, PDI_OUT);
+		PDI_expose("array_data", array_data[index].data(), PDI_OUT);
+	}
+
+	for (int index = 0; index < std::size(array_data); ++index) {
+		PDI_expose("index", &index, PDI_OUT);
+		std::array<int, 3> array_data_read = {};
+		PDI_expose("array_data_read", array_data_read.data(), PDI_IN);
+		EXPECT_EQ(array_data[index], array_data_read) << "index = " << index;
+	}
+}
+
+/* check error message generated with a dataset where 4 regex are found
+ */
+
+TEST_F(DeclHdf5, ConfigErrorForMultipleRegexes)
+{
+	InitPdi(PC_parse_string(R"==(
+logging:
+  level: trace
+data:
+  array_data: { type: array, subtype: int, size: 3 }
+metadata:
+  index: int
+plugins:
+  decl_hdf5:
+    file: decl_hdf5_test_four_regex_found.h5
+    on_event: write_event
+    datasets:
+      group[0-9]+/array_data: { type: array, subtype: int, size: 3 }
+      group.*/array_data: { type: array, subtype: int, size: 3 }
+      group1.*/array_data: { type: array, subtype: int, size: 3 }
+      group/.*/array_data: { type: array, subtype: int, size: 3 }
+      group12.*/array_data: { type: array, subtype: int, size: 3 }
+    write:
+      array_data:
+        dataset: 'group${index}/array_data'
+)=="));
+
+	int const index = 123;
+	PDI_expose("index", &index, PDI_OUT);
+
+	auto const array_data = make_a<std::array<int, 3>>();
+	EXPECT_CALL(
+		*this,
+		PdiError(
+			Eq(PDI_ERR_SPECTREE),
+			StrEq("Error while triggering event `write_event': Spectree_error: "
+	              "Found `4' match(es) in the list of datasets section for `group123/array_data'. "
+	              "Cannot choose the right element in datasets.\n"
+	              "The elements that match `group123/array_data' are:\n"
+	              " - group[0-9]+/array_data defined in line 13\n"
+	              " - group.*/array_data defined in line 14\n"
+	              " - group1.*/array_data defined in line 15\n"
+	              " - group12.*/array_data defined in line 17\n"
+	              "Attention: The elements are considered as a regex.")
+		)
+	);
+	PDI_multi_expose("write_event", "array_data", array_data.data(), PDI_OUT, nullptr);
+}
+
+/* check error when dataset_selection is given and no datasets is found
+ */
+TEST_F(DeclHdf5, DatasetMissing)
+{
+	InitPdi(PC_parse_string(R"==(
+logging: trace
+metadata:
+  index: int
+data:
+  array_data: { type: array, subtype: int, size: 3 }
+plugins:
+  decl_hdf5:
+    file: decl_hdf5_test_no_regex.h5
+    write:
+      array_data:
+        dataset: 'group${index}/array_data'
+        dataset_selection: { start: 1, size: 3 }
+)=="));
+
+	int const index = 123;
+	PDI_expose("index", &index, PDI_OUT);
+
+	auto const array_data = make_a<std::array<int, 3>>();
+	EXPECT_CALL(
+		*this,
+		PdiError(
+			Eq(PDI_ERR_SPECTREE),
+			StrEq("Unable to share `array_data', Unable to share `array_data', Error while triggering data share `array_data': "
+	              "Spectree_error in line 13: Dataset selection is invalid for implicit dataset `group123/array_data'")
+		)
+	);
+	PDI_expose("array_data", array_data.data(), PDI_OUT);
 }

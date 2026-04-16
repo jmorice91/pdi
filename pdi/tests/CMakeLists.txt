@@ -1,5 +1,5 @@
 #=============================================================================
-# Copyright (C) 2015-2024 Commissariat a l'energie atomique et aux energies alternatives (CEA)
+# Copyright (C) 2015-2026 Commissariat a l'energie atomique et aux energies alternatives (CEA)
 # Copyright (C) 2018 Institute of Bioorganic Chemistry Polish Academy of Science (PSNC)
 # All rights reserved.
 #
@@ -27,12 +27,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-cmake_minimum_required(VERSION 3.16...3.29)
+cmake_minimum_required(VERSION 3.22...4.2)
 
 find_package(Threads REQUIRED)
 if(NOT TARGET GTest::gtest)
 	option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
-	add_subdirectory("../../vendor/googletest-b4aaf97/" "googletest" EXCLUDE_FROM_ALL)
+	add_subdirectory("../../vendor/googletest-56efe39/" "googletest" EXCLUDE_FROM_ALL)
 endif()
 include(GoogleTest)
 
@@ -102,7 +102,7 @@ foreach(OPERAND1_TYPE IN LISTS MODULABLE_OPERAND_TYPES)
 	endforeach()
 endforeach()
 
-target_compile_features(PDI_unit_tests PRIVATE cxx_std_17)
+target_compile_features(PDI_unit_tests PRIVATE cxx_std_20)
 target_link_libraries(PDI_unit_tests PDI::PDI_plugins Threads::Threads GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
 target_include_directories(PDI_unit_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../src")
 gtest_discover_tests(PDI_unit_tests)
@@ -118,7 +118,7 @@ if("${ENABLE_ZSH}" STREQUAL "AUTO")
 	set(ENABLE_ZSH "${ZSH_PROGRAM_FOUND}")
 endif()
 
-add_test(NAME PDI_test_env_zsh COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_env_sh" "${CMAKE_INSTALL_PREFIX}/share/pdi/env.bash")
+add_test(NAME PDI_test_env_zsh COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_env_sh" "${PDI_BINARY_DIR}/env.bash")
 if(NOT "${ENABLE_ZSH}")
 	set_property(TEST PDI_test_env_zsh PROPERTY DISABLED TRUE)
 endif()
