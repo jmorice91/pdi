@@ -38,7 +38,7 @@
 
 #include "damaris_cfg.h"
 
-using PDI::Config_error;
+using PDI::Spectree_error;
 using PDI::Context;
 using PDI::each;
 using PDI::Expression;
@@ -122,7 +122,7 @@ Damaris_cfg::Damaris_cfg(Context& ctx, PC_tree_t tree)
 		} else if (key == "communicator") {
 			m_communicator = to_string(value);
 			if (!m_communicator) {
-				throw Config_error{key_tree, "no MPI communicator setted", key};
+				throw Spectree_error{key_tree, "no MPI communicator setted `{}'", key};
 			}
 		} else if (key == "init_on_event" || key == "on_init") {
 			m_init_on_event = to_string(value);
@@ -197,7 +197,7 @@ Damaris_cfg::Damaris_cfg(Context& ctx, PC_tree_t tree)
 			}
 		}
 		/*else {
-             throw Config_error{key_tree, "Unknown key in Damaris configuration: `{}'", key};
+             throw Spectree_error{key_tree, "Unknown key in Damaris configuration: `{}'", key};
          }*/
 	});
 
@@ -422,7 +422,7 @@ void Damaris_cfg::parse_datasets_tree(Context& ctx, PC_tree_t datasets_tree_list
 					PC_bool(value, &tf);
 					vxml.enabled_ = (tf == 0) ? false : true;
 				} else {
-					throw Value_error{"RROR: damaris_cfg unrecogognized variable map string: " + key};
+					throw Value_error{"ERROR: damaris_cfg unrecogognized variable map string: `{}'", key};
 				}
 			});
 
@@ -544,7 +544,7 @@ void Damaris_cfg::parse_layouts_tree(Context& ctx, PC_tree_t layouts_tree_list)
 					depends_on_str = "[" + depends_on_str + "]";
 
 				} else {
-					throw Value_error{"RROR: damaris_cfg unrecogognized layout map string: " + key};
+					throw Value_error{"ERROR: damaris_cfg unrecogognized layout map string: `{}'", key};
 				}
 			});
 			m_layout_depends_on.emplace(layoutxml.layout_name_, depends_on_metadata);
@@ -680,7 +680,7 @@ void Damaris_cfg::parse_meshes_tree(Context& ctx, PC_tree_t meshes_tree_list)
 				}
 			});
 
-			if (dataset_elt_full_name.empty()) throw Value_error{"ERROR: damaris_cfg mesh name must not be empty} groups"};
+			if (dataset_elt_full_name.empty()) throw Value_error{"ERROR: damaris_cfg mesh name must not be empty groups"};
 
 			//m_meshes.emplace(meshxml.get_name() , meshxml) ;
 			m_meshes.emplace(meshxml.get_name(), meshxml);
@@ -1092,7 +1092,7 @@ void retrive_nested_groups(std::string& dataset_elt_full_name, char delimiter, s
 	// Retrive names from the string stream separated by the delimiter
 	while (getline(namestream, gp_name, delimiter)) {
 		if (index == max_nested_groups) {
-			throw Value_error{"Damaris variable/layout/mesh can be nested in more than {} groups", max_nested_groups};
+			throw Value_error{"Damaris variable/layout/mesh can be nested in more than `{}' groups", max_nested_groups};
 		}
 		// Add the gp_name to the array
 		nested_groups_names[index++] = gp_name;
