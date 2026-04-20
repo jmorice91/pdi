@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
 		fprintf(stderr, "Usage: %s <config_file>\n", argv[0]);
 		exit(1);
 	}
-	
+
 	PC_tree_t conf = PC_parse_path(argv[1]);
 
 	MPI_Comm main_comm = MPI_COMM_WORLD;
@@ -171,7 +171,7 @@ int main(int argc, char* argv[])
 	PDI_init(PC_get(conf, ".pdi"));
 
 	// expose the pointer of conf
-	uintptr_t pconf = (uintptr_t) &conf;
+	uintptr_t pconf = (uintptr_t)&conf;
 	PDI_expose("conf_yaml", &pconf, PDI_OUT);
 
 	PDI_expose("mpi_comm", &main_comm, PDI_INOUT); // <-- allow plugin to set, returns Damaris client comm
@@ -221,8 +221,8 @@ int main(int argc, char* argv[])
 	PDI_expose("psize", psize, PDI_OUT);
 	PDI_expose("pcoord", pcoord, PDI_OUT);
 
-	double (*cur)[dsize[1]] = malloc(sizeof(double) * dsize[1] * dsize[0]);
-	double (*next)[dsize[1]] = malloc(sizeof(double) * dsize[1] * dsize[0]);
+	double(*cur)[dsize[1]] = malloc(sizeof(double) * dsize[1] * dsize[0]);
+	double(*next)[dsize[1]] = malloc(sizeof(double) * dsize[1] * dsize[0]);
 
 	init(dsize, pcoord, cur);
 
@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
 
 		iter(dsize, cur, next);
 		exchange(cart_com, dsize, next);
-		double (*tmp)[dsize[1]] = cur;
+		double(*tmp)[dsize[1]] = cur;
 		cur = next;
 		next = tmp;
 

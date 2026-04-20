@@ -143,7 +143,7 @@ public:
 
 					void* prm_value_buffer;
 					size_t prm_buffer_size;
-					if(std::find(std::begin(int_numbers_types), std::end(int_numbers_types), prm_type) != std::end(int_numbers_types)) {
+					if (std::find(std::begin(int_numbers_types), std::end(int_numbers_types), prm_type) != std::end(int_numbers_types)) {
 						//std::cout << "int_numbers_types contains " << prm_type << '\n';//Can be too verbose
 						int prm_long_value = std::atoi(prm_value.c_str());
 						prm_value_buffer = &prm_long_value;
@@ -156,16 +156,14 @@ public:
 						m_damaris->damaris_pdi_parameter_get(prm_name.c_str(), &new_prm_val, prm_buffer_size);	
 						context().logger().info("---------------------------------------------------------> Parameter '{}' updated successfully, new value '{}' vs Sent Value '{}'", prm_name, new_prm_val, prm_long_value);
 						*/
-					} 
-					else if(std::find(std::begin(real_numbers_types), std::end(real_numbers_types), prm_type) != std::end(real_numbers_types)) {
+					} else if (std::find(std::begin(real_numbers_types), std::end(real_numbers_types), prm_type) != std::end(real_numbers_types)) {
 						std::cout << "real_numbers_types contains " << prm_type << '\n';
 						double prm_dbl_value = std::atof(prm_value.c_str());
 						prm_value_buffer = &prm_dbl_value;
 						prm_buffer_size = sizeof(double);
 
-						int msg_err = m_damaris->damaris_pdi_parameter_set(prm_name.c_str(), prm_value_buffer, prm_buffer_size);  						
-					} 
-					else {
+						int msg_err = m_damaris->damaris_pdi_parameter_set(prm_name.c_str(), prm_value_buffer, prm_buffer_size);
+					} else {
 						std::cout << "String === " << prm_type << '\n';
 						std::string prm_string_value = prm_value;
 						prm_value_buffer = &prm_string_value;
@@ -275,8 +273,7 @@ public:
 			//iteration++;
 			//if(iteration == 2)
 			//	exit(0);
-		}
-		else if(m_config.is_parameter_to_update(name)){
+		} else if (m_config.is_parameter_to_update(name)) {
 			context().logger().info("m_config.is_parameter_to_update('{}') = `{}'", name, m_config.is_parameter_to_update(name));
 			std::pair<std::string, Desc_type> prm_to_update_info = m_config.get_parameter_to_update_info(name);
 			std::string prm_name = prm_to_update_info.first;
@@ -307,15 +304,20 @@ public:
 			}
 		}
 		//is_client_get !?
-		else if(name == m_config.is_client_dataset_name()) {	
+		else if (name == m_config.is_client_dataset_name())
+		{
 			context().logger().info("'{}' == m_config.is_client_dataset_name() = '{}'", name, (name == m_config.is_client_dataset_name()));
-					
+
 			if (Ref_w wref = ref) {
-				context().logger().info(":) D) '{}' == m_config.is_client_dataset_name() = '{}' | m_damaris->get_is_client() = '{}'", name, (name == m_config.is_client_dataset_name()), m_damaris->get_is_client());
+				context().logger().info(
+					":) D) '{}' == m_config.is_client_dataset_name() = '{}' | m_damaris->get_is_client() = '{}'",
+					name,
+					(name == m_config.is_client_dataset_name()),
+					m_damaris->get_is_client()
+				);
 				*static_cast<int*>(wref.get()) = m_damaris->get_is_client();
 				context().logger().info("------------------- CALLED is_client_dataset_name Return is_client = '{}')", m_damaris->get_is_client());
-			}
-			else {
+			} else {
 				//MayBe a PDI_multi_expose is under traitement
 				multi_expose_transaction_dataname.emplace_back(name);
 			}
@@ -329,8 +331,7 @@ public:
 
 				*static_cast<MPI_Comm*>(wref.get()) = client_comm;
 				context().logger().info("------------------- CALLED is_client_dataset_name Return client_comm SETED)");
-			}
-			else {
+			} else {
 				//MayBe a PDI_multi_expose is under traitement
 				multi_expose_transaction_dataname.emplace_back(name);
 			}
@@ -361,8 +362,7 @@ public:
 				std::string finalize_event_name = m_event_handler.get_event_name(Event_type::DAMARIS_FINALIZE);
 				m_event_handler.damaris_api_call_event(context(), m_damaris, finalize_event_name, multi_expose_transaction_dataname);
 			}
-		}
-		else if(m_event_handler.is_damaris_api_call_event(event_name)){
+		} else if (m_event_handler.is_damaris_api_call_event(event_name)) {
 			context().logger().info("event `{}' has been triggered", event_name);
 
 			context().logger().info("is_damaris_api_call_event ( `{}' ) = TRUE", event_name);
