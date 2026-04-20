@@ -55,27 +55,26 @@ void add_predefined(Context& ctx, const std::string& name, void* data, Datatype_
 	if (!predef_desc.empty()) {
 		throw Impl_error{"Predefined descriptor already defined `%s'", name.c_str()};
 	}
-	
+
 	predef_desc.metadata(true);
 	// share a RO reference on comm_self with no memory destruction function (local variable)
 	predef_desc.share({data, nullptr, move(type), true, false}, true, false);
 	predef_desc.reclaim(); // reclaim the reference and let PDI keep a copy (metadata)
 }
 
-} // namespace <anonymous>
+} // namespace
 
 namespace damaris_pdi {
 
-// Constructer calls damaris_init() 
+// Constructer calls damaris_init()
 Damaris_wrapper::Damaris_wrapper(Context& ctx, const char* xmlConfigObject, MPI_Comm comm)
 {
 	ctx.logger().info("Damaris lib initialization starts...");
-	int status = damaris_pdi_initialize(xmlConfigObject,  comm);
+	int status = damaris_pdi_initialize(xmlConfigObject, comm);
 	if (status != DAMARIS_OK) {
 		throw Plugin_error{"Cannot initialize Damaris library"};
-	}
-    else
-	    ctx.logger().info("Damaris lib initialization Done!");
+	} else
+		ctx.logger().info("Damaris lib initialization Done!");
 }
 
 int Damaris_wrapper::damaris_pdi_initialize(const char* configfile, MPI_Comm comm)
@@ -83,7 +82,7 @@ int Damaris_wrapper::damaris_pdi_initialize(const char* configfile, MPI_Comm com
 	return damaris_initialize(configfile, comm);
 }
 
-int Damaris_wrapper::damaris_pdi_finalize( void )
+int Damaris_wrapper::damaris_pdi_finalize(void)
 {
 	return damaris_finalize();
 }
@@ -93,46 +92,45 @@ int Damaris_wrapper::damaris_pdi_start(int* is_client)
 	return damaris_start(is_client);
 }
 
-int Damaris_wrapper::damaris_pdi_stop( void )
+int Damaris_wrapper::damaris_pdi_stop(void)
 {
 	return damaris_stop();
 }
 
-int Damaris_wrapper::damaris_pdi_write(const char* varname,  const void* data)
+int Damaris_wrapper::damaris_pdi_write(const char* varname, const void* data)
 {
 	return damaris_pdi_write_block(varname, 0, data);
 }
-int Damaris_wrapper::damaris_pdi_write(std::string varname,  const void* data)
+
+int Damaris_wrapper::damaris_pdi_write(std::string varname, const void* data)
 {
 	return damaris_pdi_write_block(varname, 0, data);
 }
 
 bool Damaris_wrapper::damaris_pdi_write_block(const char* varname, int32_t block, const void* data)
 {
-	return damaris_write_block(varname,block, data);
+	return damaris_write_block(varname, block, data);
 }
 
 bool Damaris_wrapper::damaris_pdi_write_block(std::string varname, int32_t block, const void* data)
 {
-	return damaris_write_block(varname.c_str(),block, data);
+	return damaris_write_block(varname.c_str(), block, data);
 }
 
-int Damaris_wrapper::damaris_pdi_get_type(const char* variable_name, DAMARIS_TYPE_STR *vartype)
+int Damaris_wrapper::damaris_pdi_get_type(const char* variable_name, DAMARIS_TYPE_STR* vartype)
 {
 	return damaris_get_type(variable_name, vartype);
 }
 
 int Damaris_wrapper::damaris_pdi_has_plugin(DAMARIS_PLUGIN_TYPE plugin)
 {
-	return damaris_has_plugin( plugin);
+	return damaris_has_plugin(plugin);
 }
-
 
 int Damaris_wrapper::damaris_pdi_alloc(const char* varname, void** ptr)
 {
 	return damaris_alloc(varname, ptr);
 }
-
 
 int Damaris_wrapper::damaris_pdi_alloc_block(const char* varname, int32_t block, void** ptr)
 {
@@ -149,10 +147,9 @@ int Damaris_wrapper::damaris_pdi_commit_iteration(const char* varname, int32_t i
 	return damaris_commit_iteration(varname, iteration);
 }
 
-int Damaris_wrapper::damaris_pdi_commit_block_iteration(const char* varname, 
-	int32_t block, int32_t iteration)
+int Damaris_wrapper::damaris_pdi_commit_block_iteration(const char* varname, int32_t block, int32_t iteration)
 {
-	return damaris_commit_block_iteration( varname, block, iteration);
+	return damaris_commit_block_iteration(varname, block, iteration);
 }
 
 int Damaris_wrapper::damaris_pdi_clear(const char* varname)
@@ -170,8 +167,7 @@ int Damaris_wrapper::damaris_pdi_clear_iteration(const char* varname, int32_t it
 	return damaris_clear_iteration(varname, iteration);
 }
 
-int Damaris_wrapper::damaris_pdi_clear_block_iteration(const char* varname, 
-	int32_t block, int32_t iteration)
+int Damaris_wrapper::damaris_pdi_clear_block_iteration(const char* varname, int32_t block, int32_t iteration)
 {
 	return damaris_clear_block_iteration(varname, block, iteration);
 }
@@ -186,14 +182,12 @@ int Damaris_wrapper::damaris_pdi_bind(const char* signal_name, signal_t sig)
 	return damaris_bind(signal_name, sig);
 }
 
-int Damaris_wrapper::damaris_pdi_parameter_get(const char* param_name, 
-	void* buffer, unsigned int size)
+int Damaris_wrapper::damaris_pdi_parameter_get(const char* param_name, void* buffer, unsigned int size)
 {
 	return damaris_parameter_get(param_name, buffer, size);
 }
 
-int Damaris_wrapper::damaris_pdi_parameter_set(const char* param_name, 
-	const void* buffer, unsigned int size)
+int Damaris_wrapper::damaris_pdi_parameter_set(const char* param_name, const void* buffer, unsigned int size)
 {
 	return damaris_parameter_set(param_name, buffer, size);
 }
@@ -203,8 +197,7 @@ int Damaris_wrapper::damaris_pdi_set_position(const char* var_name, const int64_
 	return damaris_set_position(var_name, position);
 }
 
-int Damaris_wrapper::damaris_pdi_set_block_position(const char* var_name, 
-	int32_t block, const int64_t* position)
+int Damaris_wrapper::damaris_pdi_set_block_position(const char* var_name, int32_t block, const int64_t* position)
 {
 	return damaris_set_block_position(var_name, block, position);
 }
@@ -214,9 +207,9 @@ int Damaris_wrapper::damaris_pdi_client_comm_get(MPI_Comm* comm)
 	return damaris_client_comm_get(comm);
 }
 
-int Damaris_wrapper::damaris_pdi_end_iteration( void )
+int Damaris_wrapper::damaris_pdi_end_iteration(void)
 {
-	return damaris_end_iteration( );
+	return damaris_end_iteration();
 }
 
 int Damaris_wrapper::damaris_pdi_get_iteration(int* iteration)
@@ -224,11 +217,10 @@ int Damaris_wrapper::damaris_pdi_get_iteration(int* iteration)
 	return damaris_get_iteration(iteration);
 }
 
-
 Damaris_wrapper::~Damaris_wrapper()
 {
 	// Call before MPI_Finalize()
-    //damaris_finalize();//Commented to avoid double finalize bug, Thank you Jacques :)
+	//damaris_finalize();//Commented to avoid double finalize bug, Thank you Jacques :)
 }
 
 } // namespace damaris_pdi

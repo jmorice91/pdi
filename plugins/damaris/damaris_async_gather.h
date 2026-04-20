@@ -23,44 +23,41 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
- #ifndef Damaris_async_gather_H_
- #define Damaris_async_gather_H_
- 
- #include <string>
- #include <map>
- #include <set>
- #include <tuple>
- #include <unordered_map>
- #include <unordered_set>
- 
- #include <pdi/context.h>
- #include <pdi/expression.h>
- #include <pdi/pdi_fwd.h>
- 
- // Definitions of the Damaris XML tag generators
- #include <Damaris.h>
- #include <damaris/util/DamarisVar.hpp>
- #include <damaris/model/ModifyModel.hpp>
- 
- #include "damaris_wrapper.h"
- 
- using PDI::Context;
- using std::unique_ptr;
- using std::list;
- using std::string;
- 
- namespace damaris_pdi {
- 
- class Damaris_async_gather
- {
-     
- 
-     
- public:
-     Damaris_async_gather(PDI::Context& ctx, PC_tree_t tree);
-     
- }; // class Damaris_async_gather
- 
- } // namespace damaris_pdi
- 
- #endif // Damaris_async_gather_H_
+#ifndef Damaris_async_gather_H_
+#define Damaris_async_gather_H_
+
+#include <map>
+#include <set>
+#include <string>
+#include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+
+#include <pdi/pdi_fwd.h>
+#include <pdi/context.h>
+#include <pdi/expression.h>
+
+// Definitions of the Damaris XML tag generators
+#include <Damaris.h>
+#include <damaris/model/ModifyModel.hpp>
+#include <damaris/util/DamarisVar.hpp>
+
+#include "damaris_wrapper.h"
+
+using PDI::Context;
+using std::list;
+using std::string;
+using std::unique_ptr;
+
+namespace damaris_pdi {
+
+class Damaris_async_gather
+{
+public:
+	Damaris_async_gather(PDI::Context& ctx, PC_tree_t tree);
+
+}; // class Damaris_async_gather
+
+} // namespace damaris_pdi
+
+#endif // Damaris_async_gather_H_

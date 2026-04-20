@@ -27,17 +27,17 @@
 #define DAMARIS_API_CALL_HANDLER_H_
 
 #include <mpi.h>
-#include <string>
+#include <list>
 #include <map>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <list>
 
 #include <pdi/context.h>
 
 #include <Damaris.h>
-#include "damaris_wrapper.h"
 #include "damaris_cfg.h"
+#include "damaris_wrapper.h"
 
 using PDI::Context;
 using std::list;
@@ -48,7 +48,6 @@ namespace damaris_pdi {
 
 class Damaris_api_call_handler
 {
-
 	std::string xml_config_object;
 	PDI::Expression m_communicator;
 	std::string m_init_on_event = "";
@@ -57,18 +56,24 @@ class Damaris_api_call_handler
 	std::string m_finalize_on_event = "";
 
 public:
-	Damaris_api_call_handler(std::string cfg_object, PDI::Expression comm, std::string init_on_event, std::string start_on_event, std::string stop_on_event);
+	Damaris_api_call_handler(
+		std::string cfg_object,
+		PDI::Expression comm,
+		std::string init_on_event,
+		std::string start_on_event,
+		std::string stop_on_event
+	);
 	Damaris_api_call_handler(std::string cfg_object, PDI::Expression comm);
 	Damaris_api_call_handler(std::string cfg_object);
 
-    std::string get_event_name(Event_type event_type);
+	std::string get_event_name(Event_type event_type);
 
-    bool is_damaris_api_call_event(std::string event_name);
+	bool is_damaris_api_call_event(std::string event_name);
 
-    void damaris_api_call_event(Context& ctx, unique_ptr<Damaris_wrapper> &m_damaris, std::string event_name, list<string> expose_dataname, ...);
+	void damaris_api_call_event(Context& ctx, unique_ptr<Damaris_wrapper>& m_damaris, std::string event_name, list<string> expose_dataname, ...);
 
 private:
-	void damaris_pdi_init(Context& ctx, unique_ptr<Damaris_wrapper> &m_damaris, const char* damaris_xml_object) ;
+	void damaris_pdi_init(Context& ctx, unique_ptr<Damaris_wrapper>& m_damaris, const char* damaris_xml_object);
 }; // class Damaris_api_call_handler
 
 } // namespace damaris_pdi
