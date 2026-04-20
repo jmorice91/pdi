@@ -38,7 +38,6 @@
 
 #include "damaris_cfg.h"
 
-using PDI::Spectree_error;
 using PDI::Context;
 using PDI::each;
 using PDI::Expression;
@@ -48,6 +47,7 @@ using PDI::opt_each;
 using PDI::Ref;
 using PDI::Ref_r;
 using PDI::Ref_w;
+using PDI::Spectree_error;
 using PDI::to_double;
 using PDI::to_long;
 using PDI::to_string;
@@ -499,9 +499,8 @@ void Damaris_cfg::parse_layouts_tree(Context& ctx, PC_tree_t layouts_tree_list)
 					}
 				} else if (key == "ghosts") {
 					//Is there a way to determine if an expression is ready to be evaluated? ei, all the conponent have a value
-					if (!PC_status(
-							PC_get(value, "[0]")
-						)) { //Array //['g11:g12','g21:g22','g31:g32'] for instance, each di an expreession of of Damaris Parameter
+					if (!PC_status(PC_get(value, "[0]")))
+					{ //Array //['g11:g12','g21:g22','g31:g32'] for instance, each di an expreession of of Damaris Parameter
 
 						std::string ghosts_list = "";
 						each(value, [&](PC_tree_t dim) { ghosts_list += to_string(dim) + ","; });
@@ -1151,7 +1150,8 @@ void insert_dataset_elts_to_group(DS_TYPE ds_elt_xml, std::string nested_groups_
 		}
 	}
 	//The nested groups has to be created
-	else {
+	else
+	{
 		damaris::model::DamarisGroupXML root_gp_xml{nested_groups_names[0]};
 
 		if (nearest_group_name == root_gp_xml.get_name()) {
@@ -1348,7 +1348,6 @@ std::string Damaris_cfg::end_iteration_on_event() const
 {
 	return m_end_iteration_on_event;
 }
- 
 
 std::string Damaris_cfg::m_is_client_dataset_name = "";
 std::string Damaris_cfg::m_client_comm_get_dataset_name = "";

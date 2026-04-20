@@ -162,19 +162,18 @@ int main(int argc, char* argv[])
 	//  - client process = heat simulation process
 	//  - server process = damaris process for writting hdf5 file.
 	damaris_initialize(argv[1], MPI_COMM_WORLD);
-	   
+
 	int is_client;
-	
+
 	int err = damaris_start(&is_client);
-    printf("-------------------------------------------------------------------------------------D: :) ;) is_client = %d\n", is_client);
-	
+	printf("-------------------------------------------------------------------------------------D: :) ;) is_client = %d\n", is_client);
+
 	MPI_Comm main_comm = MPI_COMM_WORLD;
 	damaris_client_comm_get(&main_comm); // <-- returns Damaris client comm
-	
+
 	// Again, we check that servers have been started properly and that
 	// this process is a client.
-   	if((err == DAMARIS_OK || err == DAMARIS_NO_SERVER) && is_client) {
-
+	if ((err == DAMARIS_OK || err == DAMARIS_NO_SERVER) && is_client) {
 		int psize_1d;
 		MPI_Comm_size(main_comm, &psize_1d);
 		int pcoord_1d;
@@ -183,15 +182,15 @@ int main(int argc, char* argv[])
 		long longval;
 
 		int dsize[2];
-        damaris_parameter_get("global_height" , &longval , sizeof(int));
+		damaris_parameter_get("global_height", &longval, sizeof(int));
 		dsize[0] = longval;
-        damaris_parameter_get("global_width" , &longval , sizeof(int));
+		damaris_parameter_get("global_width", &longval, sizeof(int));
 		dsize[1] = longval;
 
 		int psize[2];
-        damaris_parameter_get("parallelism_h" , &longval , sizeof(int));
+		damaris_parameter_get("parallelism_h", &longval, sizeof(int));
 		psize[0] = longval;
-        damaris_parameter_get("parallelism_w" , &longval , sizeof(int));
+		damaris_parameter_get("parallelism_w", &longval, sizeof(int));
 		psize[1] = longval;
 
 		// get local & add ghosts to sizes
@@ -200,7 +199,7 @@ int main(int argc, char* argv[])
 		assert(dsize[1] % psize[1] == 0);
 		dsize[1] = dsize[1] / psize[1] + 2;
 
-	    printf("(psize[1] * psize[0] == psize_1d) === (%d * %d == %d) \n", psize[1], psize[0], psize_1d);
+		printf("(psize[1] * psize[0] == psize_1d) === (%d * %d == %d) \n", psize[1], psize[0], psize_1d);
 		assert(psize[1] * psize[0] == psize_1d);
 
 		int cart_period[2] = {0, 0};
@@ -210,12 +209,12 @@ int main(int argc, char* argv[])
 		MPI_Cart_coords(cart_com, pcoord_1d, 2, pcoord);
 
 		int ii = 0;
-		int main_field_layout_global0 = psize[0]*(dsize[0]-2);
-		int main_field_layout_global1 = psize[1]*(dsize[1]-2);
-        damaris_parameter_set("main_field_layout_global0" , &main_field_layout_global0, sizeof(int)) ;
-        damaris_parameter_set("main_field_layout_global1" , &main_field_layout_global1, sizeof(int)) ;
-        damaris_parameter_set("main_field_layout_dim0" , &dsize[0], sizeof(int)) ;
-        damaris_parameter_set("main_field_layout_dim1" , &dsize[1], sizeof(int)) ;
+		int main_field_layout_global0 = psize[0] * (dsize[0] - 2);
+		int main_field_layout_global1 = psize[1] * (dsize[1] - 2);
+		damaris_parameter_set("main_field_layout_global0", &main_field_layout_global0, sizeof(int));
+		damaris_parameter_set("main_field_layout_global1", &main_field_layout_global1, sizeof(int));
+		damaris_parameter_set("main_field_layout_dim0", &dsize[0], sizeof(int));
+		damaris_parameter_set("main_field_layout_dim1", &dsize[1], sizeof(int));
 
 
 		double(*cur)[dsize[1]] = malloc(sizeof(double) * dsize[1] * dsize[0]);
@@ -223,18 +222,18 @@ int main(int argc, char* argv[])
 
 		init(dsize, pcoord, cur);
 
-	    int64_t position_main_field[2];
+		int64_t position_main_field[2];
 
-	    position_main_field[0] = (dsize[0]-2)*pcoord[0];
-	    position_main_field[1] = (dsize[1]-2)*pcoord[1];
+		position_main_field[0] = (dsize[0] - 2) * pcoord[0];
+		position_main_field[1] = (dsize[1] - 2) * pcoord[1];
 
 		double start = MPI_Wtime();
 		int next_reduce = 0;
-		for (ii = 0;ii < 10; ++ii) {
+		for (ii = 0; ii < 10; ++ii) {
 			//Iteration write
-		    damaris_set_position("main_field",position_main_field);
-		    damaris_write("main_field",cur);
-		    damaris_end_iteration();
+			damaris_set_position("main_field", position_main_field);
+			damaris_write("main_field", cur);
+			damaris_end_iteration();
 
 			iter(dsize, cur, next);
 			exchange(cart_com, dsize, next);
@@ -243,15 +242,15 @@ int main(int argc, char* argv[])
 			next = tmp;
 		}
 		//Last write
-	    damaris_set_position("main_field",position_main_field);
-	    damaris_write("main_field",cur);
-	    damaris_end_iteration();
+		damaris_set_position("main_field", position_main_field);
+		damaris_write("main_field", cur);
+		damaris_end_iteration();
 
 		damaris_stop();
 		free(cur);
 		free(next);
 	}
-        
+
 	damaris_finalize();
 
 	MPI_Finalize();
