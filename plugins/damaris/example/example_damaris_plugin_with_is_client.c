@@ -174,94 +174,102 @@ int main(int argc, char* argv[])
 	uintptr_t pconf = (uintptr_t)&conf;
 	PDI_expose("conf_yaml", &pconf, PDI_OUT);
 
+	// All processes must initialize Damaris with the XML configuration
+	//  - client process = heat simulation process
+	//  - server process = damaris process for writting hdf5 file.
+
+	int is_client=0;
+	PDI_expose("is_client", &is_client, PDI_INOUT); // The order doesn't care
 	PDI_expose("mpi_comm", &main_comm, PDI_INOUT); // <-- allow plugin to set, returns Damaris client comm
 
-	int psize_1d;
-	MPI_Comm_size(main_comm, &psize_1d);
-	int pcoord_1d;
-	MPI_Comm_rank(main_comm, &pcoord_1d);
+	if (is_client) {
+		int psize_1d;
+		MPI_Comm_size(main_comm, &psize_1d);
+		int pcoord_1d;
+		MPI_Comm_rank(main_comm, &pcoord_1d);
 
-	PDI_expose("mpi_rank", &pcoord_1d, PDI_OUT);
-	PDI_expose("mpi_size", &psize_1d, PDI_OUT);
+		PDI_expose("mpi_rank", &pcoord_1d, PDI_OUT);
+		PDI_expose("mpi_size", &psize_1d, PDI_OUT);
 
-	long longval;
+		long longval;
 
-	int dsize[2];
-	PC_int(PC_get(conf, ".datasize[0]"), &longval);
-	dsize[0] = longval;
-	PC_int(PC_get(conf, ".datasize[1]"), &longval);
-	dsize[1] = longval;
+		int dsize[2];
+		PC_int(PC_get(conf, ".datasize[0]"), &longval);
+		dsize[0] = longval;
+		PC_int(PC_get(conf, ".datasize[1]"), &longval);
+		dsize[1] = longval;
 
-	int psize[2];
-	PC_int(PC_get(conf, ".parallelism.height"), &longval);
-	psize[0] = longval;
-	PC_int(PC_get(conf, ".parallelism.width"), &longval);
-	psize[1] = longval;
+		int psize[2];
+		PC_int(PC_get(conf, ".parallelism.height"), &longval);
+		psize[0] = longval;
+		PC_int(PC_get(conf, ".parallelism.width"), &longval);
+		psize[1] = longval;
 
-	double duration;
-	PC_double(PC_get(conf, ".duration"), &duration);
+		double duration;
+		PC_double(PC_get(conf, ".duration"), &duration);
 
-	// get local & add ghosts to sizes
-	assert(dsize[0] % psize[0] == 0);
-	dsize[0] = dsize[0] / psize[0] + 2;
-	assert(dsize[1] % psize[1] == 0);
-	dsize[1] = dsize[1] / psize[1] + 2;
+		// get local & add ghosts to sizes
+		assert(dsize[0] % psize[0] == 0);
+		dsize[0] = dsize[0] / psize[0] + 2;
+		assert(dsize[1] % psize[1] == 0);
+		dsize[1] = dsize[1] / psize[1] + 2;
 
-	assert(psize[1] * psize[0] == psize_1d);
+		assert(psize[1] * psize[0] == psize_1d);
 
-	int cart_period[2] = {0, 0};
-	MPI_Comm cart_com;
-	MPI_Cart_create(main_comm, 2, psize, cart_period, 1, &cart_com);
-	int pcoord[2];
-	MPI_Cart_coords(cart_com, pcoord_1d, 2, pcoord);
+		int cart_period[2] = {0, 0};
+		MPI_Comm cart_com;
+		MPI_Cart_create(main_comm, 2, psize, cart_period, 1, &cart_com);
+		int pcoord[2];
+		MPI_Cart_coords(cart_com, pcoord_1d, 2, pcoord);
 
-	int ii = 0;
-	PDI_expose("iter", &ii, PDI_OUT);
-	PDI_expose("dsize", dsize, PDI_OUT);
-	PDI_expose("psize", psize, PDI_OUT);
-	PDI_expose("pcoord", pcoord, PDI_OUT);
+		int ii = 0;
+		PDI_expose("iter", &ii, PDI_OUT);
+		PDI_expose("dsize", dsize, PDI_OUT);
+		PDI_expose("psize", psize, PDI_OUT);
+		PDI_expose("pcoord", pcoord, PDI_OUT);
 
-	double(*cur)[dsize[1]] = malloc(sizeof(double) * dsize[1] * dsize[0]);
-	double(*next)[dsize[1]] = malloc(sizeof(double) * dsize[1] * dsize[0]);
+		double(*cur)[dsize[1]] = malloc(sizeof(double) * dsize[1] * dsize[0]);
+		double(*next)[dsize[1]] = malloc(sizeof(double) * dsize[1] * dsize[0]);
 
-	init(dsize, pcoord, cur);
+		init(dsize, pcoord, cur);
 
-	PDI_event("main_loop");
-	double start = MPI_Wtime();
-	int next_reduce = 0;
-	for (ii = 0; ii < 10; ++ii) {
-		PDI_multi_expose("newiter", "iter", &ii, PDI_INOUT, "main_field", cur, PDI_INOUT, NULL);
+		PDI_event("main_loop");
+		double start = MPI_Wtime();
+		int next_reduce = 0;
+		for (ii = 0; ii < 10; ++ii) {
+			PDI_multi_expose("newiter", "iter", &ii, PDI_INOUT, "main_field", cur, PDI_INOUT, NULL);
 
-		iter(dsize, cur, next);
-		exchange(cart_com, dsize, next);
-		double(*tmp)[dsize[1]] = cur;
-		cur = next;
-		next = tmp;
+			iter(dsize, cur, next);
+			exchange(cart_com, dsize, next);
+			double(*tmp)[dsize[1]] = cur;
+			cur = next;
+			next = tmp;
 
-		// if (ii >= next_reduce) {
-		// 	double local_time, global_time;
-		// 	local_time = MPI_Wtime() - start;
-		// 	MPI_Allreduce(&local_time, &global_time, 1, MPI_DOUBLE, MPI_MAX, main_comm);
-		// 	if (global_time >= duration) {
-		// 		if (0 == pcoord_1d) printf("iter=%7d; time=%7.3f; STOP!!!\n", ii, global_time);
-		// 		break;
-		// 	}
-		// 	int rem_iter = .9 * (duration - global_time) * (ii + 1) / (global_time + 0.1);
-		// 	if (rem_iter < 1) rem_iter = 1;
-		// 	next_reduce = ii + rem_iter;
-		// 	if (0 == pcoord_1d) printf("iter=%7d; time=%7.3f; next_reduce=%7d\n", ii, global_time, next_reduce);
-		// }
-		//PDI_event("damaris_end_iteration");
+			// if (ii >= next_reduce) {
+			// 	double local_time, global_time;
+			// 	local_time = MPI_Wtime() - start;
+			// 	MPI_Allreduce(&local_time, &global_time, 1, MPI_DOUBLE, MPI_MAX, main_comm);
+			// 	if (global_time >= duration) {
+			// 		if (0 == pcoord_1d) printf("iter=%7d; time=%7.3f; STOP!!!\n", ii, global_time);
+			// 		break;
+			// 	}
+			// 	int rem_iter = .9 * (duration - global_time) * (ii + 1) / (global_time + 0.1);
+			// 	if (rem_iter < 1) rem_iter = 1;
+			// 	next_reduce = ii + rem_iter;
+			// 	if (0 == pcoord_1d) printf("iter=%7d; time=%7.3f; next_reduce=%7d\n", ii, global_time, next_reduce);
+			// }
+			//PDI_event("damaris_end_iteration");
+		}
+		PDI_expose("iter", &ii, PDI_OUT);
+		PDI_expose("main_field", cur, PDI_OUT);
+
+		free(cur);
+		free(next);
 	}
-	PDI_expose("iter", &ii, PDI_OUT);
-	PDI_expose("main_field", cur, PDI_OUT);
 
 	PDI_finalize();
 
 	PC_tree_destroy(&conf);
-
-	free(cur);
-	free(next);
 
 	MPI_Finalize();
 }
