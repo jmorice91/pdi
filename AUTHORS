@@ -6,24 +6,27 @@ Please note this is the list for the distribution mechanism of PDI. The list for
 each sub-project (including PDI itself) is located in the dedicated sub-project
 AUTHORS file.
 
+Julian Auriac - CEA (julian.auriac@cea.fr)
+* Add pdi deactivation option
+* Fix CI bug where tests.xml file could not be written
 
 Julien Bigot - CEA (julien.bigot@cea.fr)
 * Maintainer (Dec. 2014 - ...)
 * Design and initial implementation
 
-Amal Gueroudji - CEA (agueroudji@anl.gov)
-* Deisa plugin creation
-
 Benoit Martin - CEA (bmartin@cea.fr)
 * CMake maintainer (Oct. 2024 - ...)
-* Deisa plugin refactoring
 
 François-Xavier Mordant - CEA (francois-xavier.mordant@cea.fr)
 * Fixed CMake issues, internal API enhancement
 * Bug fix, JSON plugin
 
 Jacques Morice - CEA (jacques.morice@cea.fr)
-* fix the directory of hdf5 library for rhel
+* Fix the directory of hdf5 library for rhel
+
+Thomas Padioleau - CEA (thomas.padioleau@cea.fr)
+* Added macOS CI
+* Fixed CMake issues
 
 Tomasz Paluszkiewicz - PSNC (tomaszp@man.poznan.pl)
 The scientific/academic work is financed from financial resources for science

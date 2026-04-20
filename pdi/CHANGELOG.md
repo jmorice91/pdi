@@ -16,14 +16,31 @@ and this project adheres to
 ### For users
 
 #### Added
+* fix macOS Python support. [#656](https://github.com/pdidev/pdi/issues/656)
+* added a `ENABLE_BENCHMARKING` flag to cmake to enable running the benchmarks
+  as part of the tests (off by default)
+  [#679](https://github.com/pdidev/pdi/issues/679)
 
 #### Changed
+* The minimum version of C required is now C17 (ISO/IEC 9899:2018) instead of
+  C11.
+* Fully qualify `std::move` calls to prevent a compilation warning and incorrect
+  usages [#675](https://github.com/pdidev/pdi/issues/675)
+* benchmarks are not run as part of the test suite by default anymore, one must
+  set `ENABLE_BENCHMARKING` to `ON` in Cmake to re-enable them
 
 #### Deprecated
+* Error names have been improved to fix
+  [#670](https://github.com/pdidev/pdi/issues/670):
+  - `PDI_ERR_CONFIG` has been renamed to `PDI_ERR_SPECTREE`,
+  - `PDI_ERR_RIGHT` has been renamed to `PDI_ERR_PERMISSION`,
+  - `PDI_UNAVAILABLE` is never used and will be removed.
 
 #### Removed
 
 #### Fixed
+* Fix some incorrect uses of `{fmt}` that could lead to compilation errors in
+  C++ 20+ or crashes in C++ <20 [#660](https://github.com/pdidev/pdi/issues/660)
 
 #### Security
 
@@ -31,16 +48,59 @@ and this project adheres to
 ### For plugin developers
 
 #### Added
+* Added a new testing API (`pdi/testing.h`) to replace usage of assert in plugin
+  tests [#236](https://github.com/pdidev/pdi/issues/236)
 
 #### Changed
+* Versions of C++ used in now C++ 20 instead of C++ 17.
+* `PDI::Right_error` has been replaced by `PDI::Permission_error`.
+* `PDI::Config_error` has been replaced by `PDI::Spectree_error`.
 
 #### Deprecated
 
 #### Removed
+* `PDI::Unavailable_error` was never used and has been removed.
 
 #### Fixed
 
 #### Security
+
+
+
+## [1.10.1] - 2026-02-04
+
+### For users
+
+#### Fixed
+* Support multiple consecutive calls to `find_package(PDI)`
+  [#526](https://github.com/pdidev/pdi/issues/526)
+
+
+
+## [1.10.0] - 2026-01-31
+
+### For users
+
+#### Added
+* Added macOS CI [#556](https://github.com/pdidev/pdi/issues/556)
+
+#### Changed
+* Update the version of dependencies according to our policy: oldest supported
+  Debian, Fedora & Ubuntu, as well as spack 0.19. The new requirements are:
+  CMake 3.22, Doxygen 1.9.1, pybind11 2.9.1, Python 3.10.6, and spdlog 1.9.2
+  [#613](https://github.com/pdidev/pdi/issues/613)
+
+
+
+## [1.9.3] - 2026-01-16
+
+### For users
+
+#### Fixed
+* Updated embedded versions of zpp to fix a build issue with recent cmake
+  [#631](https://github.com/pdidev/pdi/issues/631)
+* Updated doxygen files to be compatible with recent versions of Doxygen
+  [#629](https://github.com/pdidev/pdi/issues/629)
 
 
 

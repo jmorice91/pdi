@@ -7,16 +7,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+* Add subfiling support [#602](https://github.com/pdidev/pdi/issues/602)
+* added a `ENABLE_BENCHMARKING` flag to cmake to enable running the benchmarks
+  as part of the tests (off by default)
+  [#679](https://github.com/pdidev/pdi/issues/679)
 
 ### Changed
+* Fully qualify `std::move` calls to prevent a compilation warning and incorrect
+  usages [#675](https://github.com/pdidev/pdi/issues/675)
+* benchmarks are not run as part of the test suite by default anymore, one must
+  set `ENABLE_BENCHMARKING` to `ON` in Cmake to re-enable them
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+* Fixed a rare bug, where the plugin would crash while reporting an error with
+  multiple matching regexes [#668](https://github.com/pdidev/pdi/issues/668)
 
 ### Security
+
+
+## [1.10.0] - 2026-01-31
+
+### Added
+* Added macOS CI [#556](https://github.com/pdidev/pdi/issues/556)
+* Possibility to add a regex for dataset name in datasets section
+  [#582](https://github.com/pdidev/pdi/issues/582)
+* Fix HDF5 compression test for MacOS 26
+  [#627](https://github.com/pdidev/pdi/issues/627)
+
+### Changed
+* Update the version of dependencies according to our policy: oldest supported
+  Debian, Fedora & Ubuntu, as well as spack 0.19. The new requirements are:
+  CMake 3.22, and HDF5 1.10.7 [#613](https://github.com/pdidev/pdi/issues/613)
+
+### Fixed
+* fix HDF5 API version compatibility issue during error handling
+  [#567](https://github.com/pdidev/pdi/issues/567)
 
 
 ## [1.9.0] - 2025-03-07
