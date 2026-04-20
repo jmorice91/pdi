@@ -29,7 +29,7 @@
          <store name="hdf5_example" type="HDF5">  
             <option key="FileMode">Collective</option>  
             <option key="XDMFMode">NoIteration</option>  
-            <option key="FilesPath">./HDF5_files/</option>
+            <option key="FilesPath">./HDF5_files_damaris_only/</option>
         </store>        
      </storage>
  
@@ -39,6 +39,6 @@
      <scripts>     
      </scripts>
  
-     <log FileName="./log/example" RotationSize="5" LogFormat="[%TimeStamp%]: %Message%"  Flush="true"  LogLevel="info" />
+     <log FileName="./log_damaris_only/example" RotationSize="5" LogFormat="[%TimeStamp%]: %Message%"  Flush="true"  LogLevel="info" />
      
  </simulation>
