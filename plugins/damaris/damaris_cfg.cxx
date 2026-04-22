@@ -712,6 +712,8 @@ void Damaris_cfg::parse_storages_tree(Context& ctx, PC_tree_t storages_tree_list
 					store.store_name_ = to_string(value);
 				} else if (key == "type") {
 					store.store_type_ = to_string(value);
+				} else if (key == "frequency") {
+					store.store_frequency_ = to_long(value);
 				} else if (key == "file_mode") {
 					store.store_opt_FileMode_ = to_string(value);
 				} else if (key == "files_path") {
