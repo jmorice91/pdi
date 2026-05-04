@@ -439,19 +439,24 @@ endif()
 ## DAMARIS
 
 if("${BUILD_DAMARIS_PLUGIN}")
+	## Xerces-c library
 	set(XercesC_ROOT "" CACHE PATH "Root directory of XercesC")
-	set(Damaris_ROOT "" CACHE PATH "Root directory of Damaris")
-
-	if(NOT Damaris_ROOT)
-		set(Damaris_ROOT $ENV{Damaris_ROOT})
-	endif()
 
 	if(NOT XercesC_ROOT)
+		message(STATUS "Define XercesC_ROOT with environement variables")
 		set(XercesC_ROOT $ENV{XercesC_ROOT})
 	endif()
 
 	if(NOT XercesC_ROOT)
 		message(WARNING "You requested damaris plugin build (-DBUILD_DAMARIS_PLUGIN=ON) but XercesC_ROOT is not defined.")
+	endif()
+
+	## Damaris library
+	set(Damaris_ROOT "" CACHE PATH "Root directory of Damaris")
+
+	if(NOT Damaris_ROOT)
+		message(STATUS "Define Damaris_ROOT with environement variables")
+		set(Damaris_ROOT $ENV{Damaris_ROOT})
 	endif()
 
 	if(NOT Damaris_ROOT)

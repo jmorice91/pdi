@@ -37,6 +37,30 @@ include(CTest)
 
 include(GNUInstallDirs)
 
+## Xerces-c library
+set(XercesC_ROOT "" CACHE PATH "Root directory of XercesC")
+
+if(NOT XercesC_ROOT)
+    message(STATUS "Define XercesC_ROOT with environement variables")
+    set(XercesC_ROOT $ENV{XercesC_ROOT})
+endif()
+
+if(NOT XercesC_ROOT)
+    message(WARNING "You requested damaris plugin build (-DBUILD_DAMARIS_PLUGIN=ON) but XercesC_ROOT is not defined.")
+endif()
+
+## Damaris library
+set(Damaris_ROOT "" CACHE PATH "Root directory of Damaris")
+
+if(NOT Damaris_ROOT)
+    message(STATUS "Define Damaris_ROOT with environement variables")
+    set(Damaris_ROOT $ENV{Damaris_ROOT})
+endif()
+
+if(NOT Damaris_ROOT)
+    message(WARNING "You requested damaris plugin build (-DBUILD_DAMARIS_PLUGIN=ON) but DAMARIS_ROOT is not defined.")
+endif()
+
 #Damaris
 #set(Damaris_DEPS damaris MPI::MPI_C MPI::MPI_CXX)
 set(Damaris_DEPS MPI::MPI_C MPI::MPI_CXX)
