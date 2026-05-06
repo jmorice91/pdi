@@ -190,9 +190,6 @@ Damaris_cfg::Damaris_cfg(Context& ctx, PC_tree_t tree)
 				load_desc(m_descs, ctx, m_client_comm_get_dataset_name, Desc_type::CLIENT_COMM_GET);
 			}
 		}
-		/*else {
-             throw Spectree_error{key_tree, "Unknown key in Damaris configuration: `{}'", key};
-         }*/
 	});
 
 	std::string end_it_event_name = event_names.at(Event_type::DAMARIS_END_ITERATION);
@@ -333,7 +330,6 @@ void Damaris_cfg::parse_parameters_tree(Context& ctx, PC_tree_t parameters_tree_
 						depends_on_metadata.insert({metadata_name, false});
 
 						load_desc(m_descs, ctx, metadata_name, Desc_type::PRM_REQUIRED_METADATA);
-						//ctx.logger().info("--------------------------------------------------------------------------------PARAMETER {} depends on {}", prmxml.param_name_, metadata_name);
 					}
 
 
@@ -422,7 +418,6 @@ void Damaris_cfg::parse_datasets_tree(Context& ctx, PC_tree_t datasets_tree_list
 
 			//m_datasets.emplace(vxml.var_name_ , vxml) ;
 			m_datasets.emplace(dataset_elt_full_name, vxml);
-			//ctx.logger().info("------------------- Parsing damaris Variable '{}' , name_index = {} ", dataset_elt_full_name, name_index);
 
 			if (name_index == 1) {
 				find_replace_map.insert({"_DATASET_ELEMENT_REGEX_", vxml.ReturnXMLForVariable() + "\n_DATASET_ELEMENT_REGEX_"});
@@ -467,7 +462,6 @@ void Damaris_cfg::parse_layouts_tree(Context& ctx, PC_tree_t layouts_tree_list)
 					if (!PC_status(PC_get(value, "[0]"))) { //Array //[d1,d2,d3] for instance, each di an expreession of of Damaris Parameter
 						int nb_layout_dims2;
 						PC_len(value, &nb_layout_dims2);
-						//std::cout << "INFO: damaris_cfg nb_layout_dims has dims2: " << nb_layout_dims2 << std::endl ;
 
 						std::string dims_list = "";
 						each(value, [&](PC_tree_t dim) { dims_list += to_string(dim) + ","; });
@@ -519,8 +513,6 @@ void Damaris_cfg::parse_layouts_tree(Context& ctx, PC_tree_t layouts_tree_list)
 							depends_on_str += metadata_name + ", ";
 
 							depends_on_metadata.insert({metadata_name, false});
-
-							//load_desc(m_descs, ctx, metadata_name, Desc_type::PRM_REQUIRED_METADATA);
 						});
 						depends_on_str.pop_back(); //' '
 						depends_on_str.pop_back(); //','
@@ -529,8 +521,6 @@ void Damaris_cfg::parse_layouts_tree(Context& ctx, PC_tree_t layouts_tree_list)
 						depends_on_str = metadata_name;
 						//depends_on_metadata[metadata_name] = false;
 						depends_on_metadata.insert({metadata_name, false});
-
-						//load_desc(m_descs, ctx, metadata_name, Desc_type::PRM_REQUIRED_METADATA);
 					}
 					depends_on_str = "[" + depends_on_str + "]";
 
@@ -634,10 +624,8 @@ void Damaris_cfg::parse_storages_tree(Context& ctx, PC_tree_t storages_tree_list
 					//Ensure the folder exists
 					struct stat st;
 					if (stat(store.store_opt_FilesPath_.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
-						//ctx.logger().info("HDF5 files_path exists: '{}'", to_string(value));
 					} else {
 						if (mkdir(store.store_opt_FilesPath_.c_str(), 0775) == -1) {
-							//ctx.logger().info("Error during the creation of the HDF5 files_path: '{}'", strerror(errno));
 							exit(1);
 						} else {
 							//ctx.logger().info("HDF5 files_path created successfully: '{}'", to_string(value));
