@@ -349,8 +349,6 @@ void Damaris_cfg::parse_parameters_tree(Context& ctx, PC_tree_t parameters_tree_
 					prmxml.param_value_ = "1"; //"0"
 				else
 					prmxml.param_value_ = "1.0"; //"0"
-			} else {
-				///???
 			}
 
 			m_parameters.emplace(prmxml.param_name_, prmxml);
@@ -918,15 +916,12 @@ void insert_dataset_elts_to_group(DS_TYPE ds_elt_xml, std::string nested_groups_
 			if (nearest_group_name == root_gp_xml->get_name()) {
 				root_gp_xml->add_ds_element(ds_elt_xml);
 
-				//free(root_gp_xml);
 				return;
 			}
 			nearest_parent_group = root_gp_xml;
 			root_group_exists = true;
 			break;
 		}
-
-		//free(root_gp_xml);
 	}
 
 	//Insertion in an existing nested group
@@ -979,7 +974,6 @@ void insert_dataset_elts_to_group(DS_TYPE ds_elt_xml, std::string nested_groups_
 			std::string group_name = nested_groups_names[insertion_group_id];
 			damaris::model::DamarisGroupXML sub_gp_xml{group_name};
 			if (nearest_group_name == sub_gp_xml.get_name()) {
-				//sub_gp_xml.add_variable(ds_elt_xml);
 				sub_gp_xml.add_ds_element(ds_elt_xml);
 			} else {
 				sub_gp_xml.add_sub_group(linked_parent_group);
@@ -988,8 +982,6 @@ void insert_dataset_elts_to_group(DS_TYPE ds_elt_xml, std::string nested_groups_
 		}
 		nearest_parent_group->add_sub_group(linked_parent_group);
 	}
-
-	//free(nearest_parent_group);
 }
 
 const string& Damaris_cfg::xml_config_object(void)
