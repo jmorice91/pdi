@@ -5,21 +5,24 @@ full potential of this plugin.
 
 
 **Add description of damaris plugin**
-
-**Add explication of the difference between with and without `is_client**
+* add Damaris website
+  
+**Explain the difference between with and without `is_client`**
+* [to be modified] the communicator will be split by Damaris in a communicator for the simulation code (client) 
+and for damaris execution (client).
 
 **...**
 
 ## Configuration grammar
 
-**WARNING** The following grammer will be changed in the next version of this plugin (see https://github.com/jmorice91/pdi/issues/42). 
-For this reason, we didn't go in the details. 
+**WARNING** The following grammar will be changed in the next version of this plugin (see https://github.com/jmorice91/pdi/issues/42). 
+For this reason, we didn't go into the details. 
 
-* `communicator`: a $-expression referencing a MPI communicator. This communicator will be split by Damaris in a communicator for the simulation code (client) 
-and for damaris execution (client). (not use today)
-* `architecture`: a key-value map ...
+* `communicator`: (currently not used) A $-expression referencing an MPI communicator.
+
+* `architecture`: a key-value map.
  * Configuration keys:
-    * `sim_name`(string, default: 0) : the total number of subfiles to generate. If set to -1 or other negative values, the one-subfile-per-node mode will be triggered.
+    * `sim_name`(string): the name of the simulation  
     * `domains`(integer, default: 1 (??)) : number of blocks by sub domain
     * `dedicated`: a key value map. Configure the division of 
       * Configura keys:
