@@ -67,7 +67,7 @@ bool load_desc(unordered_map<string, Desc_type>& descs, Context& ctx, const stri
 {
 	auto&& result = descs.emplace(name, desc_type);
 	if (!result.second) {
-		//ctx.logger().warn("Duplicate use of a descriptor `{}' in `{}' (previously used in `{}')", name, desc_names.at(desc_type), desc_names.at(result.first->second));
+		ctx.logger().warn("Duplicate use of a descriptor `{}')", name);
 	}
 	return result.second;
 }
@@ -76,7 +76,7 @@ bool load_event(unordered_map<string, Event_type>& events, Context& ctx, const s
 {
 	auto&& result = events.emplace(name, event_type);
 	if (!result.second) {
-		//ctx.logger().warn("Duplicate use of a descriptor `{}' in `{}' (previously used in `{}')", name, desc_names.at(desc_type), desc_names.at(result.first->second));
+		ctx.logger().warn("Duplicate use of a descriptor `{}')", name);
 	}
 	return result.second;
 }
@@ -582,8 +582,6 @@ void Damaris_cfg::parse_layouts_tree(Context& ctx, PC_tree_t layouts_tree_list)
 				//Background creation of parameter
 				PC_tree_t parameters_conf = PC_parse_string(prm_config_yaml.c_str());
 				parse_parameters_tree(ctx, parameters_conf);
-			} else {
-				///???
 			}
 
 			if (dataset_elt_full_name.empty()) throw Value_error{"ERROR: damaris_cfg layout name must not be empty"};
