@@ -278,7 +278,6 @@ void Damaris_api_call_handler::damaris_api_call_event(
 				//if(nb_awaited_args <= arg_pos)
 				break;
 		}
-		//ctx.logger().info("------------------- CALLING damaris_pdi_client_comm_get arg_pos({}==='{}')", arg1_name, client_comm);
 	}
 	// DAMARIS_SET_POSITION
 	else if (event_name == event_names.at(Event_type::DAMARIS_SET_POSITION))
@@ -530,7 +529,6 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			//ctx.logger().info("Plugin called damaris_end_iteration()");
 
 			int err = m_damaris->damaris_pdi_end_iteration();
-			//iteration++;
 
 			ctx.logger().info("Plugin sent damaris_end_iteration() to Damaris");
 		} else {
