@@ -31,8 +31,26 @@
 
 #define IMX 10
 
-//std::string int_numbers_types[3] = {"short", "int", "integer"};
-//std::string real_numbers_types[3] = {"float", "real", "double"};
+const char* CONFIG_FOR_READING_RESULT
+	= "logging: trace\n"
+	  "metadata:\n"
+	  "  nn: int\n"
+	  "  is_client: int\n"
+	  "  nbcalls: int\n"
+	  "data:\n"
+	  "  pdi_values: {size: ['$nn'], type: array, subtype: int}\n"
+	  "  damaris_values: {size: ['$nn'], type: array, subtype: int}\n"
+	  "plugins:\n"
+	  "  decl_hdf5:\n"
+	  "    - file: './data_iter0.h5'\n"
+	  "      read:\n"
+	  "        pdi_values:\n"
+	  "          dataset: int_values\n"
+	  "        nn:\n"
+	  "    - file: './HDF5_files/damaris_scalar_type_It0.h5'\n"
+	  "      read:\n"
+	  "        damaris_values:\n"
+	  "          dataset: int_values\n";
 
 int main(int argc, char* argv[])
 {
@@ -41,7 +59,6 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 	MPI_Init(&argc, &argv);
-	PC_tree_t conf = PC_parse_path(argv[1]);
 
 	MPI_Comm main_comm = MPI_COMM_WORLD;
 	int world_size;
@@ -50,41 +67,84 @@ int main(int argc, char* argv[])
 		fprintf(stderr, "Please use at least 2 mpi processes\n");
 		exit(1);
 	}
+
+	// get specification tree
+	PC_tree_t conf = PC_parse_path(argv[1]);
+
+	// initialize pdi
 	PDI_init(PC_get(conf, ".pdi"));
 
 	// All processes must initialize Damaris with the XML configuration
 	//  - client process = heat simulation process
 	//  - server process = damaris process for writting hdf5 file.
 
-	int is_client=0;
+	int nn_first_call = IMX / 2;
+
+	int is_client = 0;
 	PDI_expose("is_client", &is_client, PDI_INOUT); // The order doesn't care
 	PDI_expose("mpi_comm", &main_comm, PDI_INOUT); // <-- allow plugin to set, returns Damaris client comm
 
+	printf("value of is_client %d=", is_client);
 	if (is_client) {
-		int size=IMX;
-		// short short_valeus[IMX];
+		int size = nn_first_call;
 		int int_values[IMX];
-		// long long_value[IMX];
-		// double d_values[IMX];
-		// float  f_values[IMX];
-
-		PDI_expose("nn", &size, PDI_OUT);
-
-		for(int ii=0; ii<IMX; ++ii) {
-			int_values[ii] = 100+ii;
+		int nb_calls = 0;
+		for (int ii = 0; ii < size; ++ii) {
+			int_values[ii] = 100 + ii;
 		}
+		PDI_expose("nn", &size, PDI_INOUT);
+		printf("expose toto\n");
+		PDI_multi_expose("toto", "nn", &size, PDI_INOUT, "nbcalls", &nb_calls, PDI_INOUT, "int_values", int_values, PDI_OUT, NULL);
 
-		PDI_expose("int_values", int_values, PDI_INOUT);
+		// The value 'nn' can't not be updated (Error in Damaris xml input file ???)
+		// change size of the vector give to pdi for the second call
+		nb_calls = nb_calls + 1;
+		size = IMX;
 
-		for(int ii=0; ii<IMX; ++ii) {
-			int_values[ii] = 200+ii;
+		for (int ii = size / 2; ii < size; ++ii) {
+			int_values[ii] = 300 + ii;
 		}
-
-		PDI_expose("int_values", int_values, PDI_INOUT);
-
+		PDI_expose("nn", &size, PDI_INOUT);
+		printf("expose ttiti\n");
+		PDI_multi_expose("titi", "nn", &size, PDI_INOUT, "nbcalls", &nb_calls, PDI_INOUT, "int_values", int_values, PDI_OUT, NULL);
 	}
 
 	PDI_finalize();
 	PC_tree_destroy(&conf);
+
+	// comparison of the results
+
+	// reinitialize pdi for reading results
+	PDI_init(PC_parse_string(CONFIG_FOR_READING_RESULT));
+	int rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	if (rank == 0) {
+		int size_pdi = -20;
+		int damaris_values[IMX];
+		int pdi_values[IMX];
+
+		PDI_expose("nn", &size_pdi, PDI_INOUT);
+		for (int ii = 0; ii < nn_first_call; ++ii) {
+			damaris_values[ii] = 6;
+			pdi_values[ii] = 9;
+		}
+		PDI_multi_expose("read_pdi", "pdi_values", pdi_values, PDI_INOUT, NULL);
+		PDI_multi_expose("read_damaris", "damaris_values", damaris_values, PDI_INOUT, NULL);
+
+		if (size_pdi != nn_first_call) {
+			printf("error in reading the size of the array, size_pdi=%d\n", size_pdi);
+			exit(EXIT_FAILURE);
+		}
+
+		for (int ii = 0; ii < nn_first_call; ++ii) {
+			if (pdi_values[ii] != damaris_values[ii]) {
+				printf("values pdi %d != %d  damaris\n", pdi_values[ii], damaris_values[ii]);
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+	PDI_finalize();
 	MPI_Finalize();
+
+	return EXIT_SUCCESS;
 }

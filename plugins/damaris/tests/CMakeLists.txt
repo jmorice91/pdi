@@ -30,24 +30,31 @@
 
 cmake_minimum_required(VERSION 3.16...3.29)
 
-# set(RUNTEST_DIR "${CMAKE_CURRENT_LIST_DIR}/../cmake/runtest-dir")
+##
+set(RUNTEST_DIR "${CMAKE_CURRENT_LIST_DIR}/../cmake/runtest-dir")
 
-# # Add the plugin path to PDI_PLUGIN_PATH
-# set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" PROPERTY TEST_INCLUDE_FILE "${CMAKE_CURRENT_BINARY_DIR}/TestPath.cmake")
-# file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/TestPath.cmake"
-#      CONTENT "
-# set(PDI_PLUGIN_PATH \"\$ENV{PDI_PLUGIN_PATH}\")\n
-# if(\"x\${PDI_PLUGIN_PATH}x\" STREQUAL xx)\n
-# set(ENV{PDI_PLUGIN_PATH} \"\$<TARGET_FILE_DIR:pdi_damaris_plugin>\")\n
-# else()\n
-# set(ENV{PDI_PLUGIN_PATH} \"\$<TARGET_FILE_DIR:pdi_damaris_plugin>:\${PDI_PLUGIN_PATH}\")\n
-# endif()
-# "
-# )
+# Add the plugin path to PDI_PLUGIN_PATH
+set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" PROPERTY TEST_INCLUDE_FILE "${CMAKE_CURRENT_BINARY_DIR}/TestPath.cmake")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/TestPath.cmake"
+     CONTENT "
+set(PDI_PLUGIN_PATH \"\$ENV{PDI_PLUGIN_PATH}\")\n
+if(\"x\${PDI_PLUGIN_PATH}x\" STREQUAL xx)\n
+set(ENV{PDI_PLUGIN_PATH} \"\$<TARGET_FILE_DIR:pdi_damaris_plugin>\")\n
+else()\n
+set(ENV{PDI_PLUGIN_PATH} \"\$<TARGET_FILE_DIR:pdi_damaris_plugin>:\${PDI_PLUGIN_PATH}\")\n
+endif()
+"
+)
 
 ## used ctest in next commit
 
 # copy yaml file, to binary folder, for example_damaris_plugin_with_is_client.c
-configure_file(test_damaris_scalar_type.yml test_damaris_scalar_type.yml)
+configure_file(test_damaris_scalar_type.yml test_damaris_scalar_type.yml COPYONLY)
 add_executable (test_damaris_scalar_type test_damaris_scalar_type.c)
-target_link_libraries (test_damaris_scalar_type PDI::PDI_C MPI::MPI_CXX)
+target_link_libraries (test_damaris_scalar_type PDI::PDI_C MPI::MPI_C)
+
+add_test(NAME test_damaris_scalar_type COMMAND "${RUNTEST_DIR}" "${MPIEXEC}" "${MPIEXEC_NUMPROC_FLAG}" 2 ${MPIEXEC_PREFLAGS} "$<TARGET_FILE:test_damaris_scalar_type>" "${CMAKE_CURRENT_SOURCE_DIR}/test_damaris_scalar_type.yml")
+
+#add_test(NAME test_damaris_scalar_type COMMAND "${RUNTEST_DIR}" "${MPIEXEC}" "${MPIEXEC_NUMPROC_FLAG}" 2 ${MPIEXEC_PREFLAGS} "$<TARGET_FILE:test_damaris_scalar_type>" ${MPIEXEC_POSTFLAGS} "${CMAKE_CURRENT_SOURCE_DIR}/test_damaris_scalar_type.yml")
+#set_property(TEST test_damaris_scalar_type PROPERTY TIMEOUT 15)
+#set_property(TEST test_damaris_scalar_type PROPERTY PROCESSORS 2)

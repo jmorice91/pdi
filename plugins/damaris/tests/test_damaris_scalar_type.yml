@@ -1,73 +1,54 @@
-# only the following config is passed to PDI
+logging: debug
 pdi:
-  metadata: # type of small values for which PDI keeps a copy
-    nn: int 
+  metadata:
+    nn: int
     mpi_comm: MPI_Comm
     is_client: int
-  data: # type of values for which PDI does not keep a copy
-    int_values: { size: ["$nn"], type: array, subtype: int }
-  
+    nbcalls: int
+  data:
+    int_values: {size: ["$nn"], type: array, subtype: int}
   plugins:
+    trace: info
     mpi:
-    trace: ~
     decl_hdf5:
-      file: data_2.h5
-      communicator: $mpi_comm #$MPI_COMM_WORLD # the MPI communicator used for HDF5 parallel synchronized write 
-      write:
-        int_values: # the name of the data to write
-    damaris:  
-      communicator: $MPI_COMM_WORLD # pas utilisé actuellement
-      architecture: 
-        sim_name: example  
-        domains: 1 # => nb de block par sous domain 
-        # damaris divise le sous domain par block equitablement
+      - file: 'data_iter${nbcalls}.h5'
+        communicator: $mpi_comm
+        write: [nn, nbcalls, int_values]
+        on_event: toto
+    damaris:
+      architecture:
+        communicator: $MPI_COMM_WORLD
+        sim_name: damaris_scalar_type
+        domains: 1
         dedicated:
           core: 1
-          node: 0 
+          node: 0
+      get_is_client: is_client
+      client_comm_get: mpi_comm
       datasets:
-        - dataset: 
+        - dataset:
             name: int_values
             layout: int_values_layout
-            mesh: mesh2d # pour la visualisation
-            centering: zonal
             storage: hdf5_int
-            script:
-            visualizable: true
-            time_varying: true
-            #comment: This is the zonal pressure from our test simulation
-      layouts: # on ne peut pas modifier la valuer de layout une fois initialisé, travail en cours pour la modification dynamique
-        - layout: 
-            name: int_values_layout # ~hdf5 dataset_selection
+      layouts:
+        - layout:
+            name: int_values_layout
             type: int
-            global: "$nn"
-            dimensions: [ "$nn" ] # process dim, with ghosts/boundaries
-            ghosts: '0:0,0:0'     # 1 ghost à gauche de dim1, 1 ghost à droit de dim1 , 1 ghost à gauche de dim2, 1 ghost à droit de dim2
-            depends_on: [nn]      # This will help ensure an update of the layout attributes value to Damaris lib once the metadata are exposed (using Damaris Parameters in the background)!
+            global: ["$nn"]
+            dimensions: ["$nn"]
+            ghosts: '0:0'
+            depends_on: [nn]
       storages:
         - storage:
             name: hdf5_int
             type: HDF5
-            file_mode: Collective # or FilePerCore
-            files_path: ./HDF5_files/   # Where to save files
-            # hdf5 file name defined by damaris
-            #frequency: 1    
-      #Events sections
+            file_mode: Collective
+            files_path: ./HDF5_files/
       write: 
-        int_values: # the name of the data to write, if dataset not specified afterward! ~meme notion de dataset hdf5
+        int_values:
           dataset: int_values
-          #when: '$iter<10'   # do only write the first 10 iterations (0...9), Default at every iteration.
-          #position: ['$pcoord[0]', '$pcoord[1]']
-          position: ['0'] # ~start de dataset_selection par iteration
-          # damaris "append" file with next iteration
-          #block: [...] # To be defined # indice de block à écrire = 0 par default => tout le sous-domain
-          # si "architecture/domains" >1 on peut écrire les block de indice 0 à domains-1
-      get_is_client: is_client #Needed only when is_client is used
-      dc_ending_operations: #Will be used in the future to provide couple of instructions to execute at the end of the simulation, for the dedicated cores. MayBe relying on user_code plugin!!?
-      client_comm_get: mpi_comm #Needed to return the Damaris client comm
-      
-      #Optional config, has a default behavior 
+          position: ['0']
       log:
-        #file_name: example # default = $sim_name
         rotation_size: 5
         log_level: info
         flush: true
