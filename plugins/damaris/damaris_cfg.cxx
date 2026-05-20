@@ -88,7 +88,7 @@ bool load_event(unordered_map<string, Event_type>& events, Context& ctx, const s
 bool creation_directory_cpp(const string& dir_name)
 {
 	fs::path path_dir{fs::current_path()};
-	const fs::path path_name{dir_name};
+	const fs::path path_name{"/"+dir_name};
 	path_dir += path_name;
 	std::error_code ec; // error code
 
