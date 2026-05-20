@@ -14,7 +14,7 @@ pdi:
       - file: 'data_iter${nbcalls}.h5'
         communicator: $mpi_comm
         write: [nn, nbcalls, int_values]
-        on_event: toto
+        on_event: write
     damaris:
       architecture:
         communicator: $MPI_COMM_WORLD

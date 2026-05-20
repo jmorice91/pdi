@@ -900,6 +900,7 @@ bool Damaris_cfg::is_needed_metadata(std::string data_name)
 
 	return is_needed_metadata;
 }
+
 // Jacques: Comme on ne change pas les valeurs de  m_parameter_depends_on ici on peut se permettre d'utiliser auto. Mais on fait une copie.
 std::unordered_map<std::string, std::pair<std::string, std::string>> Damaris_cfg::get_updatable_parameters(Context& ctx)
 {
@@ -937,10 +938,10 @@ void Damaris_cfg::reset_parameter_depends_on(std::string prm_name)
 	if (m_parameter_depends_on.find(prm_name) == m_parameter_depends_on.end()) {
 		// not found
 		//  handle the error
-		throw Value_error{"m_parameter_depends_on not found: `{}'",prm_name.c_str()};
+		throw Value_error{"m_parameter_depends_on not found: `{}'", prm_name.c_str()};
 	} else {
-		std::unordered_map<std::string, bool> & prm_depends_on_data = m_parameter_depends_on.at(prm_name);
-		for (auto &depends_on_data: prm_depends_on_data) {
+		std::unordered_map<std::string, bool>& prm_depends_on_data = m_parameter_depends_on.at(prm_name);
+		for (auto& depends_on_data: prm_depends_on_data) {
 			depends_on_data.second = false;
 		}
 	}
@@ -957,11 +958,11 @@ void Damaris_cfg::reset_parameter_depends_on(std::vector<std::string> prm_list)
 // Jacques: This function is never call
 void Damaris_cfg::reset_all_parameters_depends_on()
 {
-	for (auto &prm_depends_on: m_parameter_depends_on) {
-		auto &prm_name = prm_depends_on.first;
-		auto &prm_depends_on_data = prm_depends_on.second;
+	for (auto& prm_depends_on: m_parameter_depends_on) {
+		auto& prm_name = prm_depends_on.first;
+		auto& prm_depends_on_data = prm_depends_on.second;
 
-		for (auto &depends_on_data: prm_depends_on_data) {
+		for (auto& depends_on_data: prm_depends_on_data) {
 			depends_on_data.second = false;
 		}
 	}
