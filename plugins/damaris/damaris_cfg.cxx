@@ -67,7 +67,7 @@ bool load_desc(unordered_map<string, Desc_type>& descs, Context& ctx, const stri
 {
 	auto&& result = descs.emplace(name, desc_type);
 	if (!result.second) {
-		ctx.logger().warn("Duplicate use of a descriptor `{}')", name);
+		//ctx.logger().warn("Duplicate use of a descriptor `{}')", name);
 	}
 	return result.second;
 }
@@ -76,7 +76,7 @@ bool load_event(unordered_map<string, Event_type>& events, Context& ctx, const s
 {
 	auto&& result = events.emplace(name, event_type);
 	if (!result.second) {
-		ctx.logger().warn("Duplicate use of a descriptor `{}')", name);
+		//ctx.logger().warn("Duplicate use of a descriptor `{}')", name);
 	}
 	return result.second;
 }
@@ -218,9 +218,6 @@ Damaris_cfg::Damaris_cfg(Context& ctx, PC_tree_t tree)
 	damarisXMLModifyModel.RepalceWithRegEx(find_replace_map);
 
 	m_xml_config_object = damarisXMLModifyModel.GetConfigString();
-
-	//printf("-------------------------------------------------------XML OBJECT MODIFIED----------------------------------------------\n%s", damarisXMLModifyModel.GetConfigString().c_str());
-	//exit(0);
 }
 
 void Damaris_cfg::parse_architecture_tree(Context& ctx, PC_tree_t arch_tree)
@@ -334,7 +331,7 @@ void Damaris_cfg::parse_parameters_tree(Context& ctx, PC_tree_t parameters_tree_
 
 
 				} else {
-					std::cerr << "ERROR: damaris_cfg unrecogognized parameter map string: " << key << std::endl;
+					throw Value_error{"ERROR: damaris_cfg unrecogognized parameter map string: `{}'", key};
 				}
 			});
 			//m_parameter_expression.emplace(prmxml.param_name_, prmxml.param_value_);
@@ -630,7 +627,7 @@ void Damaris_cfg::parse_storages_tree(Context& ctx, PC_tree_t storages_tree_list
 						}
 					}
 				} else {
-					std::cerr << "ERROR: damaris_cfg unrecogognized storage map string: " << key << std::endl;
+					throw Value_error{"ERROR: damaris_cfg unrecogognized storage map string: `{}'", key};
 				}
 			});
 			m_storages.emplace(store.store_name_, store);

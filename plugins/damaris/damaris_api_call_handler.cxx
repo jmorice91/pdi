@@ -112,7 +112,6 @@ void Damaris_api_call_handler::damaris_api_call_event(
 		int is_client;
 		int err = m_damaris->damaris_pdi_start(&is_client);
 		m_damaris->set_is_client(is_client);
-		//ctx.logger().info("------------------- CALLED damaris_pdi_start Return IS_CLIENT = '{}')", is_client);
 
 		int arg_pos = 0;
 		int nb_awaited_args = 1;
@@ -126,7 +125,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			ctx.logger().info("Multi expose: Reclaiming `{}' ({}/{})", it->c_str(), ++arg_pos, expose_dataname.size());
 
 			if (arg_pos == 1 && strcmp("is_client", it->c_str()) == 0) {
-				ctx.logger().info("------------------- CALLED damaris_pdi_start {} = '{}')", arg1_name, is_client);
+				ctx.logger().info("Calling damaris_pdi_start {} = '{}')", arg1_name, is_client);
 
 				int* inout_is_client;
 				PDI_access(it->c_str(), (void**)&inout_is_client, PDI_INOUT);
@@ -181,7 +180,6 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			ctx.logger().warn("Trying to call damaris_parameter_get() before plugin initialization (`{}')", event_name);
 			return;
 		}
-		ctx.logger().info("------------------- INNNNN DAMARIS_PARAMETER_GET Event...");
 
 		char* var_name;
 		std::string arg1_name = "prm_name";
@@ -196,13 +194,10 @@ void Damaris_api_call_handler::damaris_api_call_event(
 		if (!data_name.empty()) {
 			var_name = (char*)data_name.c_str();
 			buffer = va_arg(extra_args, void*);
-			ctx.logger().info("------------------- INNNNN DAMARIS_PARAMETER_GET Event.. EXTRA ARGS.... AFTER buffer");
 			*size = va_arg(extra_args, int);
-			ctx.logger().info("------------------- INNNNN DAMARIS_PARAMETER_GET Event.. EXTRA ARGS.... AFTER size...");
-
 
 			ctx.logger().info(
-				"------------------- CALLING damaris_pdi_parameter_get arg_pos({}==='{}', {}==='{}', {}==='{}')",
+				"Calling damaris_pdi_parameter_get arg_pos({}==='{}', {}==='{}', {}==='{}')",
 				arg1_name,
 				var_name,
 				arg2_name,
@@ -238,7 +233,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			*size = va_arg(extra_args, size_t);
 
 			ctx.logger().info(
-				"------------------- CALLING damaris_pdi_parameter_set arg_pos({}==='{}', {}==='{}', {}==='{}')",
+				"Calling damaris_pdi_parameter_set arg_pos({}==='{}', {}==='{}', {}==='{}')",
 				arg1_name,
 				var_name,
 				arg2_name,
@@ -330,7 +325,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 		}
 
 		ctx.logger().info(
-			"------------------- CALLING damaris_pdi_set_position arg_pos({}==='{}', {}==='{}')",
+			"Calling damaris_pdi_set_position arg_pos({}==='{}', {}==='{}')",
 			arg1_name,
 			var_name,
 			arg2_name,
@@ -388,7 +383,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			}
 		}
 
-		ctx.logger().info("------------------- CALLING damaris_pdi_write arg_pos({}==='{}', {}==={})", arg1_name, var_name, arg2_name, *(int*)data);
+		ctx.logger().info("Calling damaris_pdi_write arg_pos({}==='{}', {}==={})", arg1_name, var_name, arg2_name, *(int*)data);
 		int err = m_damaris->damaris_pdi_write((const char*)var_name, (void*)data);
 	}
 	// DAMARIS_SET_BLOCK_POSITION
@@ -445,7 +440,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 		}
 
 		ctx.logger().info(
-			"------------------- CALLING damaris_pdi_set_block_position arg_pos({}==='{}', {}==='{}', {}==='{}')",
+			"Calling damaris_pdi_set_block_position arg_pos({}==='{}', {}==='{}', {}==='{}')",
 			arg1_name,
 			var_name,
 			arg2_name,
@@ -509,7 +504,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 		}
 
 		ctx.logger().info(
-			"------------------- CALLING damaris_pdi_write_block arg_pos({}==='{}', {}==='{}', {}==='{}')",
+			"Calling damaris_pdi_write_block arg_pos({}==='{}', {}==='{}', {}==='{}')",
 			arg1_name,
 			var_name,
 			arg2_name,
