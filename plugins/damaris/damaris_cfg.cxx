@@ -91,7 +91,6 @@ bool creation_directory_cpp(const string& dir_name)
 	const fs::path path_name{"/"+dir_name};
 	path_dir += path_name;
 	std::error_code ec; // error code
-
 	if (fs::exists(path_dir, ec)) {
 		if (fs::is_directory(path_dir, ec)) {
 			// Directory already exists
@@ -128,15 +127,13 @@ bool creation_directory_c_only(Context& ctx, const string& dir_name)
 	//
 	// ensure the folder exists
 	struct stat st;
-
 	int stat_result = stat(dir_name.c_str(), &st);
 	if (stat_result != 0) {
-		ctx.logger().info("The directory doesn't exist try to create");
+		ctx.logger().info("The directory {} doesn't exist try to create", dir_name);
 
 		int ret = mkdir(dir_name.c_str(), 0755);
 
-		if (ret == 0) {
-			// the directory is created
+		if (ret == 0) { // the directory is created
 			return true;
 		}
 
@@ -146,7 +143,6 @@ bool creation_directory_c_only(Context& ctx, const string& dir_name)
 			int stat_result_new = stat(dir_name.c_str(), &st);
 			// a previous process already created it
 			if (stat_result_new == 0 && S_ISDIR(st.st_mode)) {
-				ctx.logger().info("S_ISDIR is okay");
 				return true;
 			} else {
 				// case path is not a directory
@@ -160,7 +156,6 @@ bool creation_directory_c_only(Context& ctx, const string& dir_name)
 	} else {
 		int stat_result_new = stat(dir_name.c_str(), &st);
 		if (stat_result_new == 0 && S_ISDIR(st.st_mode)) {
-			ctx.logger().info("S_ISDIR is okay");
 			return true;
 		} else {
 			// case path is not a directory
@@ -210,10 +205,10 @@ Damaris_cfg::Damaris_cfg(Context& ctx, PC_tree_t tree)
 			//default_when = to_string(value);
 			parse_architecture_tree(ctx, value);
 		} else if (key == "communicator") {
-			m_communicator = to_string(value);
-			if (!m_communicator) {
-				throw Spectree_error{key_tree, "no MPI communicator setted `{}'", key};
-			}
+			// m_communicator = to_string(value);
+			// if (!m_communicator) {
+			// 	throw Spectree_error{key_tree, "no MPI communicator setted `{}'", key};
+			// }
 		} else if (key == "init_on_event" || key == "on_init") {
 			m_init_on_event = to_string(value);
 			load_event(m_events, ctx, m_init_on_event, Event_type::DAMARIS_INITIALIZE);
@@ -308,9 +303,16 @@ Damaris_cfg::Damaris_cfg(Context& ctx, PC_tree_t tree)
 	damarisXMLModifyModel.RepalceWithRegEx(find_replace_map);
 
 	m_xml_config_object = damarisXMLModifyModel.GetConfigString();
+	
+	std::ofstream outputXMLFile("log/damaris_config.xml");
 
-	//printf("-------------------------------------------------------XML OBJECT MODIFIED----------------------------------------------\n%s", damarisXMLModifyModel.GetConfigString().c_str());
-	//exit(0);
+	if (outputXMLFile.is_open()) {
+		outputXMLFile << damarisXMLModifyModel.GetConfigString(); 
+
+		outputXMLFile.close(); 
+	} else {
+		ctx.logger().error("Could not open the file for writing damaris xml config");
+	}
 }
 
 void Damaris_cfg::parse_architecture_tree(Context& ctx, PC_tree_t arch_tree)
@@ -697,7 +699,6 @@ void Damaris_cfg::parse_storages_tree(Context& ctx, PC_tree_t storages_tree_list
 		each(storages_tree, [&](PC_tree_t storagest_key, PC_tree_t storage_tree) { //each storage
 			damaris::model::DamarisStoreXML store{};
 			std::map<std::string, std::string> find_replace_map = {};
-
 			each(storage_tree, [&](PC_tree_t st_key, PC_tree_t value) { //storage info
 				std::string key = to_string(st_key);
 
@@ -710,7 +711,7 @@ void Damaris_cfg::parse_storages_tree(Context& ctx, PC_tree_t storages_tree_list
 					store.store_opt_FileMode_ = to_string(value);
 				} else if (key == "files_path") {
 					store.store_opt_FilesPath_ = to_string(value);
-					//bool create_dir = creation_directory_c_only(ctx, store.store_opt_FilesPath_);
+					// bool create_dir = creation_directory_c_only(ctx, store.store_opt_FilesPath_);
 					bool create_dir = creation_directory_cpp(store.store_opt_FilesPath_);
 					if (!create_dir) {
 						Spectree_error{storage_tree, "The key `{}' doesn't exist for a storage.", key};
@@ -733,8 +734,8 @@ void Damaris_cfg::parse_storages_tree(Context& ctx, PC_tree_t storages_tree_list
 
 void Damaris_cfg::parse_write_tree(Context& ctx, PC_tree_t write_tree_list)
 {
-	each(write_tree_list, [&](PC_tree_t writet_key, PC_tree_t write_ds_tree) { //each dataset to write
-		std::string ds_name = to_string(writet_key); //the name of the data to write, if dataset not specified afterward!
+	each(write_tree_list, [&](PC_tree_t write_key, PC_tree_t write_ds_tree) { //each dataset to write
+		std::string ds_name = to_string(write_key); //the name of the data to write, if dataset not specified afterward!
 		Dataset_Write_Info ds_write_info;
 
 		//dataset
