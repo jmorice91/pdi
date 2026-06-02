@@ -104,7 +104,7 @@ public:
 			ctx.callbacks().add_data_callback([this](const std::string& name, Ref ref) { this->data(name, ref); }, desc.first);
 			data_cb_concat.append(desc.first + ", ");
 		}
-		context().logger().info("Data for callback : {}", data_cb_concat);
+		context().logger().debug("Data for callback : {}", data_cb_concat);
 
 		//Sim configured event names
 		for (auto&& event: m_config.events()) {
@@ -166,7 +166,7 @@ public:
 			if (updatable_parameters.size() > 0) {
 				prm_name_concat.pop_back();
 				prm_name_concat.pop_back();
-				context().logger().info("data `{}' is a needed metadata for the evaluation of parameters {}", name, prm_name_concat);
+				context().logger().debug("data `{}' is a needed metadata for the evaluation of parameters {}", name, prm_name_concat);
 			}
 		} else if (m_config.is_dataset_to_write(name)) {
 			if (Ref_r rref = ref) {
@@ -174,10 +174,10 @@ public:
 
 				//Only write when autorized!
 				if (ds_write_info.when.to_long(context())) {
-					context().logger().info("data `{}' will be written when = '{}'", name, ds_write_info.when.to_long(context()));
+					context().logger().debug("data `{}' will be written when = '{}'", name, ds_write_info.when.to_long(context()));
 
 					int32_t block = ds_write_info.block.to_long(context());
-					context().logger().info("data `{}' will be written in block = '{}'", name, block);
+					context().logger().debug("data `{}' will be written in block = '{}'", name, block);
 					int64_t position[3]
 						= {ds_write_info.position[0].to_long(context()),
 					       ds_write_info.position[1].to_long(context()),
@@ -186,7 +186,7 @@ public:
 					const void* data = static_cast<const void*>(rref.get());
 
 					if (block > 0) {
-						context().logger().info(
+						context().logger().debug(
 							"data `{}' will be written at: block '{}' and position '{}:{}:{}', when = '{}'",
 							name,
 							block,
@@ -240,9 +240,9 @@ public:
 						for (auto it = after_write_events.begin(); it != after_write_events.end(); it++) {
 							std::string aw_event = it->c_str();
 							if (m_event_handler.is_damaris_api_call_event(aw_event)) {
-								context().logger().info("event `{}' has been triggered", aw_event);
+								context().logger().debug("event `{}' has been triggered", aw_event);
 
-								context().logger().info("is_damaris_api_call_event ( `{}' ) = TRUE", aw_event);
+								context().logger().debug("is_damaris_api_call_event ( `{}' ) = TRUE", aw_event);
 								m_event_handler.damaris_api_call_event(context(), m_damaris, aw_event, {});
 							} else { //Non Damaris call event
 							}
@@ -252,6 +252,7 @@ public:
 				}
 			} else {
 				context().logger().error("The Damaris need write access over the data (`{}')", name);
+				//Yshan? throw PDI::System_error{"The Damaris need write access over the data `{}' ", name};
 			}
 		} else if (m_config.is_parameter_to_update(name)) {
 			context().logger().debug("m_config.is_parameter_to_update('{}') = `{}'", name, m_config.is_parameter_to_update(name));
@@ -304,7 +305,7 @@ public:
 				int err = m_damaris->damaris_pdi_client_comm_get(&client_comm);
 
 				*static_cast<MPI_Comm*>(wref.get()) = client_comm;
-				context().logger().info("client_comm has been setted");
+				context().logger().debug("client_comm has been setted");
 			} else {
 				//MayBe a PDI_multi_expose is under traitement
 				multi_expose_transaction_dataname.emplace_back(name);
@@ -335,7 +336,7 @@ public:
 				m_event_handler.damaris_api_call_event(context(), m_damaris, finalize_event_name, multi_expose_transaction_dataname);
 			}
 		} else if (m_event_handler.is_damaris_api_call_event(event_name)) {
-			context().logger().info("event `{}' has been triggered", event_name);
+			context().logger().debug("event `{}' has been triggered", event_name);
 
 			context().logger().debug("is_damaris_api_call_event ( `{}' ) = TRUE", event_name);
 			m_event_handler.damaris_api_call_event(context(), m_damaris, event_name, multi_expose_transaction_dataname);
