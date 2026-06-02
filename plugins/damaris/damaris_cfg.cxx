@@ -70,7 +70,7 @@ bool load_desc(unordered_map<string, Desc_type>& descs, Context& ctx, const stri
 {
 	auto&& result = descs.emplace(name, desc_type);
 	if (!result.second) {
-		//ctx.logger().warn("Duplicate use of a descriptor `{}')", name);
+		ctx.logger().debug("Duplicate use of a descriptor `{}')", name);
 	}
 	return result.second;
 }
@@ -79,7 +79,7 @@ bool load_event(unordered_map<string, Event_type>& events, Context& ctx, const s
 {
 	auto&& result = events.emplace(name, event_type);
 	if (!result.second) {
-		//ctx.logger().warn("Duplicate use of a descriptor `{}')", name);
+		ctx.logger().debug("Duplicate event name `{}' in `{}' (previously defined in `{}')", result.first->first, event_names.at(event_type), event_names.at(result.first->second));
 	}
 	return result.second;
 }

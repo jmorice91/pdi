@@ -140,7 +140,6 @@ public:
 					void* prm_value_buffer;
 					size_t prm_buffer_size;
 					if (std::find(std::begin(int_numbers_types), std::end(int_numbers_types), prm_type) != std::end(int_numbers_types)) {
-						std::cout << "int_numbers_types contains " << prm_type << " value=" << prm_value << '\n';
 						int prm_long_value = std::atoi(prm_value.c_str());
 						prm_value_buffer = &prm_long_value;
 						prm_buffer_size = sizeof(int);
@@ -290,14 +289,8 @@ public:
 			context().logger().debug("'{}' == m_config.is_client_dataset_name() = '{}'", name, (name == m_config.is_client_dataset_name()));
 
 			if (Ref_w wref = ref) {
-				context().logger().debug(
-					"'{}' == m_config.is_client_dataset_name() = '{}' | m_damaris->get_is_client() = '{}'",
-					name,
-					(name == m_config.is_client_dataset_name()),
-					m_damaris->get_is_client()
-				);
 				*static_cast<int*>(wref.get()) = m_damaris->get_is_client();
-				context().logger().debug("is_client = '{}')", m_damaris->get_is_client());
+				context().logger().debug("is_client = '{}', buffer can be written", m_damaris->get_is_client());
 			} else {
 				//MayBe a PDI_multi_expose is under traitement
 				multi_expose_transaction_dataname.emplace_back(name);
