@@ -843,15 +843,12 @@ void Damaris_cfg::parse_log_tree(Context& ctx, PC_tree_t config)
 		{{"_SIM_LOG_NAME_", log_file_name}, {"_LOG_ROTATION_SIZE_", log_rotation_size}, {"_LOG_FLUSH_", log_flush}, {"_LOG_LEVEL_", log_level}}
 	);
 
-	ctx.logger().info("begin update xml for log");
 	try {
 		//Update the xml config
 		damarisXMLModifyModel.RepalceWithRegEx(find_replace_map);
 	} catch (...) {
-		ctx.logger().info("error in RepalceWithRegEx");
-		throw Value_error{"error in RepalceWithRegEx\n The XML file for damaris is`{}'", damarisXMLModifyModel.GetConfigString()};
+		throw Value_error{"Error in RepalceWithRegEx in parse_log_tree\n The XML file for damaris is`{}'", damarisXMLModifyModel.GetConfigString()};
 	}
-	ctx.logger().info("end update xml for log");
 }
 
 bool Damaris_cfg::is_dataset_to_write(std::string data_name)

@@ -122,10 +122,10 @@ void Damaris_api_call_handler::damaris_api_call_event(
 		//for (auto it = expose_dataname.rbegin(); it != expose_dataname.rend(); ++it) {
 		//while (arg_pos < nb_awaited_args)
 		for (; it != expose_dataname.end(); it++) {
-			ctx.logger().info("Multi expose: Reclaiming `{}' ({}/{})", it->c_str(), ++arg_pos, expose_dataname.size());
+			ctx.logger().debug("Multi expose: Reclaiming `{}' ({}/{})", it->c_str(), ++arg_pos, expose_dataname.size());
 
 			if (arg_pos == 1 && strcmp("is_client", it->c_str()) == 0) {
-				ctx.logger().info("Calling damaris_pdi_start {} = '{}')", arg1_name, is_client);
+				ctx.logger().debug("Calling damaris_pdi_start {} = '{}')", arg1_name, is_client);
 
 				int* inout_is_client;
 				PDI_access(it->c_str(), (void**)&inout_is_client, PDI_INOUT);
@@ -196,7 +196,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			buffer = va_arg(extra_args, void*);
 			*size = va_arg(extra_args, int);
 
-			ctx.logger().info(
+			ctx.logger().debug(
 				"Calling damaris_pdi_parameter_get arg_pos({}==='{}', {}==='{}', {}==='{}')",
 				arg1_name,
 				var_name,
@@ -232,7 +232,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			buffer = va_arg(extra_args, void*);
 			*size = va_arg(extra_args, size_t);
 
-			ctx.logger().info(
+			ctx.logger().debug(
 				"Calling damaris_pdi_parameter_set arg_pos({}==='{}', {}==='{}', {}==='{}')",
 				arg1_name,
 				var_name,
@@ -261,7 +261,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 		//for (auto it = expose_dataname.rbegin(); it != expose_dataname.rend(); ++it) {
 		//while (arg_pos < nb_awaited_args)
 		for (; it != expose_dataname.end(); it++) {
-			ctx.logger().info("Multi expose: Reclaiming `{}' ({}/{})", it->c_str(), ++arg_pos, expose_dataname.size());
+			ctx.logger().debug("Multi expose: Reclaiming `{}' ({}/{})", it->c_str(), ++arg_pos, expose_dataname.size());
 
 			if (arg_pos == 1) {
 				static MPI_Comm* comm;
@@ -308,7 +308,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			//for (auto it = expose_dataname.rbegin(); it != expose_dataname.rend(); ++it) {
 			//while (arg_pos < nb_awaited_args)
 			for (; it != expose_dataname.end(); it++) {
-				ctx.logger().info("Multi expose: Reclaiming `{}' ({}/{})", it->c_str(), ++arg_pos, expose_dataname.size());
+				ctx.logger().debug("Multi expose: Reclaiming `{}' ({}/{})", it->c_str(), ++arg_pos, expose_dataname.size());
 
 				if (arg_pos == 1) {
 					PDI_access(it->c_str(), (void**)&var_name, PDI_IN);
@@ -324,7 +324,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			}
 		}
 
-		ctx.logger().info(
+		ctx.logger().debug(
 			"Calling damaris_pdi_set_position arg_pos({}==='{}', {}==='{}')",
 			arg1_name,
 			var_name,
@@ -367,7 +367,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			//for (auto it = expose_dataname.rbegin(); it != expose_dataname.rend(); ++it) {
 			//while (arg_pos < nb_awaited_args)
 			for (; it != expose_dataname.end(); it++) {
-				ctx.logger().info("Multi expose: Reclaiming `{}' ({}/{})", it->c_str(), ++arg_pos, expose_dataname.size());
+				ctx.logger().debug("Multi expose: Reclaiming `{}' ({}/{})", it->c_str(), ++arg_pos, expose_dataname.size());
 
 				if (arg_pos == 1) {
 					PDI_access(it->c_str(), (void**)&var_name, PDI_IN);
@@ -383,7 +383,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			}
 		}
 
-		ctx.logger().info("Calling damaris_pdi_write arg_pos({}==='{}', {}==={})", arg1_name, var_name, arg2_name, *(int*)data);
+		ctx.logger().debug("Calling damaris_pdi_write arg_pos({}==='{}', {}==={})", arg1_name, var_name, arg2_name, *(int*)data);
 		int err = m_damaris->damaris_pdi_write((const char*)var_name, (void*)data);
 	}
 	// DAMARIS_SET_BLOCK_POSITION
@@ -419,7 +419,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			//for (auto it = expose_dataname.rbegin(); it != expose_dataname.rend(); ++it) {
 			//while (arg_pos < nb_awaited_args)
 			for (; it != expose_dataname.end(); it++) {
-				ctx.logger().info("Multi expose: Reclaiming `{}' ({}/{})", it->c_str(), ++arg_pos, expose_dataname.size());
+				ctx.logger().debug("Multi expose: Reclaiming `{}' ({}/{})", it->c_str(), ++arg_pos, expose_dataname.size());
 
 				if (arg_pos == 1) {
 					PDI_access(it->c_str(), (void**)&var_name, PDI_IN);
@@ -439,7 +439,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			}
 		}
 
-		ctx.logger().info(
+		ctx.logger().debug(
 			"Calling damaris_pdi_set_block_position arg_pos({}==='{}', {}==='{}', {}==='{}')",
 			arg1_name,
 			var_name,
@@ -483,7 +483,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			//for (auto it = expose_dataname.rbegin(); it != expose_dataname.rend(); ++it) {
 			//while (arg_pos < nb_awaited_args)
 			for (; it != expose_dataname.end(); it++) {
-				ctx.logger().info("Multi expose: Reclaiming `{}' ({}/{})", it->c_str(), ++arg_pos, expose_dataname.size());
+				ctx.logger().debug("Multi expose: Reclaiming `{}' ({}/{})", it->c_str(), ++arg_pos, expose_dataname.size());
 
 				if (arg_pos == 1) {
 					PDI_access(it->c_str(), (void**)&var_name, PDI_IN);
@@ -503,7 +503,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			}
 		}
 
-		ctx.logger().info(
+		ctx.logger().debug(
 			"Calling damaris_pdi_write_block arg_pos({}==='{}', {}==='{}', {}==='{}')",
 			arg1_name,
 			var_name,
@@ -528,7 +528,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			ctx.logger().warn("Trying to call damaris_end_iteration() before plugin initialization (`{}')", event_name);
 		}
 	} else if (event_name == event_names.at(Event_type::DAMARIS_STOP)) {
-		// DAMARIS_STOP is called and the Daamris server processes will return from the damaris_start() call
+		// DAMARIS_STOP is called and the Damaris server processes will return from the damaris_start() call
 		if (!m_damaris) {
 			ctx.logger().warn("Trying to call damaris_strop() before plugin initialization (`{}')", event_name);
 			return;
