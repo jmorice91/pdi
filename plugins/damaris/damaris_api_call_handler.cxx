@@ -576,7 +576,7 @@ void Damaris_api_call_handler::damaris_pdi_init(Context& ctx, unique_ptr<Damaris
 	if (!m_damaris) {
 		MPI_Comm comm = MPI_COMM_WORLD;
 		if (m_communicator) {
-			//TODO: could be replaced by a communicator passed from the simulation!
+			comm = *(static_cast<const MPI_Comm*>(PDI::Ref_r{m_communicator.to_ref(ctx)}.get()));
 		}
 
 		// This creator method calls damaris_initialize(), passin in an XML file, so if we want to

@@ -205,10 +205,10 @@ Damaris_cfg::Damaris_cfg(Context& ctx, PC_tree_t tree)
 			//default_when = to_string(value);
 			parse_architecture_tree(ctx, value);
 		} else if (key == "communicator") {
-			// m_communicator = to_string(value);
-			// if (!m_communicator) {
-			// 	throw Spectree_error{key_tree, "no MPI communicator setted `{}'", key};
-			// }
+			m_communicator = to_string(value);
+			if (!m_communicator) {
+				throw Spectree_error{key_tree, "no MPI communicator setted `{}'", key};
+			}
 		} else if (key == "init_on_event" || key == "on_init") {
 			m_init_on_event = to_string(value);
 			load_event(m_events, ctx, m_init_on_event, Event_type::DAMARIS_INITIALIZE);
