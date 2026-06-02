@@ -76,7 +76,6 @@ class damaris_plugin: public Plugin
 
 	unique_ptr<Damaris_wrapper> m_damaris;
 
-	static pair<unordered_set<string>, unordered_set<string>> dependencies() { return {{"mpi"}, {"mpi"}}; }
 
 	list<string> multi_expose_transaction_dataname;
 	//list<Ref> multi_expose_transaction_dataref;
@@ -88,6 +87,9 @@ class damaris_plugin: public Plugin
 	int datasets_to_write_count = 0; //The number of data already written in the current iteration
 
 public:
+
+	static pair<unordered_set<string>, unordered_set<string>> dependencies() { return {{"mpi"}, {"mpi"}}; }
+
 	damaris_plugin(Context& ctx, PC_tree_t config)
 		: Plugin{ctx}
 		, m_config{ctx, config}
