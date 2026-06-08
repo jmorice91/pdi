@@ -509,7 +509,6 @@ void Damaris_cfg::parse_datasets_tree(Context& ctx, PC_tree_t datasets_tree_list
 
 			if (dataset_elt_full_name.empty()) throw Value_error{"ERROR: damaris_cfg variable name must not be empty"};
 
-			//m_datasets.emplace(vxml.var_name_ , vxml) ;
 			m_datasets.emplace(dataset_elt_full_name, vxml);
 
 			if (name_index == 1) {
@@ -735,13 +734,23 @@ void Damaris_cfg::parse_storages_tree(Context& ctx, PC_tree_t storages_tree_list
 void Damaris_cfg::parse_write_tree(Context& ctx, PC_tree_t write_tree_list)
 {
 	each(write_tree_list, [&](PC_tree_t write_key, PC_tree_t write_ds_tree) { //each dataset to write
-		std::string ds_name = to_string(write_key); //the name of the data to write, if dataset not specified afterward!
+		std::string data_name = to_string(write_key); //the name of the data to write
 		Dataset_Write_Info ds_write_info;
+		ds_write_info.dataset_name = data_name; //the name of the dataset into which to write, if dataset not specified afterward!
 
 		//dataset
 		PC_tree_t ds_name_tree = PC_get(write_ds_tree, ".dataset");
 		if (!PC_status(ds_name_tree)) {
-			ds_name = to_string(ds_name_tree);
+			ds_write_info.dataset_name = to_string(ds_name_tree);
+
+			//Check if the ds exists
+			auto it = m_datasets.find(ds_write_info.dataset_name);
+			if (it != m_datasets.end()) {
+				//modelVarXML& value = it->second;
+			} else {
+				// Key does not exist
+				throw Spectree_error{write_tree_list, "Specified dataset `{}' to write into doesn't exist.", to_string(ds_name_tree)};
+			}
 		}
 		//when
 		PC_tree_t ds_when_tree = PC_get(write_ds_tree, ".when");
@@ -770,9 +779,11 @@ void Damaris_cfg::parse_write_tree(Context& ctx, PC_tree_t write_tree_list)
 			ds_write_info.block = to_string(ds_block_tree);
 		}
 
-		m_datasets_to_write.emplace(ds_name, ds_write_info);
+		m_datasets_to_write.emplace(data_name, ds_write_info);
 
-		load_desc(m_descs, ctx, ds_name, Desc_type::DATA_TO_WRITE_WITH_BLOCK);
+		load_desc(m_descs, ctx, data_name, Desc_type::DATA_TO_WRITE_WITH_BLOCK);
+
+		ctx.logger().info("ds_name = {}, data_name = {}", ds_write_info.dataset_name, data_name);
 	});
 }
 
@@ -1082,7 +1093,7 @@ PDI::Expression Damaris_cfg::communicator() const
 	return m_communicator;
 }
 
-const unordered_map<std::string, damaris::model::DamarisVarXML>& Damaris_cfg::datasets() const
+const std::unordered_map<std::string, damaris::model::DamarisVarXML>& Damaris_cfg::datasets() const
 {
 	return m_datasets;
 }
