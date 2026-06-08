@@ -118,6 +118,7 @@ const std::unordered_map<Event_type, std::string> event_names
        {Event_type::DAMARIS_FINALIZE, "finalize"}};
 
 struct Dataset_Write_Info {
+	std::string dataset_name;
 	PDI::Expression when = "1"; //By default, always write as long as there are iteration going on
 	/*int64_t* */ PDI::Expression position[3] = {"0", "0", "0"}; //Max Dim is 3
 	/*int32_t */ PDI::Expression block = "0"; //when domain = 1, which is the default behaviour

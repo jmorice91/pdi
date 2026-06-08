@@ -202,7 +202,7 @@ public:
 							m_damaris,
 							set_block_pos_event_name,
 							multi_expose_transaction_dataname,
-							name.c_str(),
+							ds_write_info.dataset_name.c_str(),
 							block,
 							position
 						);
@@ -213,7 +213,7 @@ public:
 							m_damaris,
 							write_block_event_name,
 							multi_expose_transaction_dataname,
-							name.c_str(),
+							ds_write_info.dataset_name.c_str(),
 							block,
 							data
 						);
@@ -224,13 +224,13 @@ public:
 							m_damaris,
 							set_pos_event_name,
 							multi_expose_transaction_dataname,
-							name.c_str(),
+							ds_write_info.dataset_name.c_str(),
 							position
 						);
 
 						std::string write_event_name = m_event_handler.get_event_name(Event_type::DAMARIS_WRITE);
 						m_event_handler
-							.damaris_api_call_event(context(), m_damaris, write_event_name, multi_expose_transaction_dataname, name.c_str(), data);
+							.damaris_api_call_event(context(), m_damaris, write_event_name, multi_expose_transaction_dataname, ds_write_info.dataset_name.c_str(), data);
 					}
 
 					datasets_to_write_count++;
