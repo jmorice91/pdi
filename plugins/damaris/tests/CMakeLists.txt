@@ -57,4 +57,10 @@ add_test(NAME test_damaris_scalar_type COMMAND "${RUNTEST_DIR}" "${MPIEXEC}" "${
 
 #add_test(NAME test_damaris_scalar_type COMMAND "${RUNTEST_DIR}" "${MPIEXEC}" "${MPIEXEC_NUMPROC_FLAG}" 2 ${MPIEXEC_PREFLAGS} "$<TARGET_FILE:test_damaris_scalar_type>" ${MPIEXEC_POSTFLAGS} "${CMAKE_CURRENT_SOURCE_DIR}/test_damaris_scalar_type.yml")
 #set_property(TEST test_damaris_scalar_type PROPERTY TIMEOUT 15)
-#set_property(TEST test_damaris_scalar_type PROPERTY PROCESSORS 2)
+#set_property(TEST test_damaris_scalar_type PROPERTY PROCESSORS 2) 
+
+configure_file(test_distinguish_data_and_dataset.yml test_distinguish_data_and_dataset.yml COPYONLY)
+add_executable (test_distinguish_data_and_dataset test_distinguish_data_and_dataset.c)
+target_link_libraries (test_distinguish_data_and_dataset PDI::PDI_C MPI::MPI_C)
+
+add_test(NAME test_distinguish_data_and_dataset COMMAND "${RUNTEST_DIR}" "${MPIEXEC}" "${MPIEXEC_NUMPROC_FLAG}" 2 ${MPIEXEC_PREFLAGS} "$<TARGET_FILE:test_distinguish_data_and_dataset>" "${CMAKE_CURRENT_SOURCE_DIR}/test_distinguish_data_and_dataset.yml")
