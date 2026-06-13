@@ -105,7 +105,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 		// function until they are asked to stop by clients. On clients,
 		// is_client will be set to 1 (0 on servers).
 		if (!m_damaris) {
-			ctx.logger().error("Trying to call damaris_start() before plugin initialization (`{}')", event_name);
+			//ctx.logger().error("Trying to call damaris_start() before plugin initialization (`{}')", event_name);
 			throw PDI::System_error("Trying to call damaris_start() before plugin initialization (`{}')", event_name);
 			return;
 		}
@@ -178,8 +178,8 @@ void Damaris_api_call_handler::damaris_api_call_event(
 	else if (event_name == event_names.at(Event_type::DAMARIS_PARAMETER_GET))
 	{
 		if (!m_damaris) {
-			ctx.logger().error("Trying to call damaris_parameter_get() before plugin initialization (`{}')", event_name);
-			PDI::System_error("Trying to call damaris_parameter_get() before plugin initialization (`{}')", event_name);
+			//ctx.logger().error("Trying to call damaris_parameter_get() before plugin initialization (`{}')", event_name);
+			throw PDI::System_error("Trying to call damaris_parameter_get() before plugin initialization (`{}')", event_name);
 			return;
 		}
 
@@ -215,7 +215,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 	else if (event_name == event_names.at(Event_type::DAMARIS_PARAMETER_SET))
 	{
 		if (!m_damaris) {
-			ctx.logger().error("Trying to call damaris_parameter_set() before plugin initialization (`{}')", event_name);
+			//ctx.logger().error("Trying to call damaris_parameter_set() before plugin initialization (`{}')", event_name);
 			throw PDI::System_error("Trying to call damaris_parameter_set() before plugin initialization (`{}')", event_name);
 			return;
 		}
@@ -281,7 +281,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 	else if (event_name == event_names.at(Event_type::DAMARIS_SET_POSITION))
 	{
 		if (!m_damaris) {
-			ctx.logger().error("Trying to call damaris_set_position() before plugin initialization (`{}')", event_name);
+			//ctx.logger().error("Trying to call damaris_set_position() before plugin initialization (`{}')", event_name);
 			throw PDI::System_error("Trying to call damaris_set_position() before plugin initialization (`{}')", event_name);
 			return;
 		}
@@ -341,8 +341,8 @@ void Damaris_api_call_handler::damaris_api_call_event(
 	else if (event_name == event_names.at(Event_type::DAMARIS_WRITE))
 	{
 		if (!m_damaris) {
-			ctx.logger().error("Trying to call damaris_write() before plugin initialization (`{}')", event_name);
-			PDI::System_error("Trying to call damaris_write() before plugin initialization (`{}')", event_name);
+			//ctx.logger().error("Trying to call damaris_write() before plugin initialization (`{}')", event_name);
+			throw PDI::System_error("Trying to call damaris_write() before plugin initialization (`{}')", event_name);
 			return;
 		}
 		char* var_name;
@@ -395,7 +395,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 	else if (event_name == event_names.at(Event_type::DAMARIS_SET_BLOCK_POSITION))
 	{
 		if (!m_damaris) {
-			ctx.logger().error("Trying to call damaris_set_position() before plugin initialization (`{}')", event_name);
+			//ctx.logger().error("Trying to call damaris_set_position() before plugin initialization (`{}')", event_name);
 			throw PDI::System_error("Trying to call damaris_set_position() before plugin initialization (`{}')", event_name);
 			return;
 		}
@@ -460,7 +460,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 	else if (event_name == event_names.at(Event_type::DAMARIS_WRITE_BLOCK))
 	{
 		if (!m_damaris) {
-			ctx.logger().error("Trying to call damaris_write() before plugin initialization (`{}')", event_name);
+			//ctx.logger().error("Trying to call damaris_write() before plugin initialization (`{}')", event_name);
 			throw PDI::System_error("Trying to call damaris_write() before plugin initialization (`{}')", event_name);
 			return;
 		}
@@ -531,15 +531,15 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			int err = m_damaris->damaris_pdi_end_iteration();
 
 			//TODO: only one rank should display the info
-			ctx.logger().debug("Data sent to Damaris (end of iteration)");
+			ctx.logger().info("Data sent to Damaris (end of iteration)");
 		} else {
-			ctx.logger().error("Trying to call damaris_end_iteration() before plugin initialization (`{}')", event_name);
+			//ctx.logger().error("Trying to call damaris_end_iteration() before plugin initialization (`{}')", event_name);
 			throw PDI::System_error("Trying to call damaris_end_iteration() before plugin initialization (`{}')", event_name);
 		}
 	} else if (event_name == event_names.at(Event_type::DAMARIS_STOP)) {
 		// DAMARIS_STOP is called and the Damaris server processes will return from the damaris_start() call
 		if (!m_damaris) {
-			ctx.logger().error("Trying to call damaris_stop() before plugin initialization (`{}')", event_name);
+			//ctx.logger().error("Trying to call damaris_stop() before plugin initialization (`{}')", event_name);
 			throw PDI::System_error("Trying to call damaris_stop() before plugin initialization (`{}')", event_name);
 			return;
 		}
@@ -547,7 +547,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 		int err = m_damaris->damaris_pdi_stop();
 	} else if (event_name == event_names.at(Event_type::DAMARIS_FINALIZE)) {
 		if (!m_damaris) {
-			ctx.logger().error("Trying to call damaris_strop() before plugin initialization (`{}')", event_name);
+			//ctx.logger().error("Trying to call damaris_strop() before plugin initialization (`{}')", event_name);
 			throw PDI::System_error("Trying to call damaris_strop() before plugin initialization (`{}')", event_name);
 			return;
 		}
@@ -570,16 +570,16 @@ void Damaris_api_call_handler::damaris_api_call_event(
 				ctx.logger().info("Damaris finalized successfully!");
 			}
 		} catch (const std::exception& e) {
-			ctx.logger().error("Issue when finalizing Damaris: {}", e.what());
+			//ctx.logger().error("Issue when finalizing Damaris: {}", e.what());
 			throw PDI::System_error("Issue when finalizing Damaris: {}", e.what());
 		} catch (...) {
-			ctx.logger().error("An issue occurred when finalizing Damaris.");
+			//ctx.logger().error("An issue occurred when finalizing Damaris.");
 			throw PDI::System_error("An issue occurred when finalizing Damaris.");
 		}
 	} else {
 		assert(false && "Unexpected damaris event type");
-		ctx.logger().warn("Unexpected damaris event type.");
-		throw PDI::System_error("Unexpected damaris event type.");
+		//ctx.logger().warn("Unexpected damaris event type.");
+		throw PDI::System_error("Unexpected damaris event type in calling 'damaris_api_call_event'.");
 	}
 }
 
@@ -591,7 +591,7 @@ void Damaris_api_call_handler::damaris_pdi_init(Context& ctx, unique_ptr<Damaris
 			//TODO: could be replaced by a communicator passed from the simulation!
 		}
 
-		// This creator method calls damaris_initialize(), passin in an XML file, so if we want to
+		// This creator method calls damaris_initialize(), passing in an XML file, so if we want to
 		// pre-fill our xml file, we need to do this somehow before:
 		// PDI_expose("mpi_comm", &main_comm, PDI_INOUT);
 
