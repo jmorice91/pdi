@@ -251,8 +251,8 @@ public:
 					}
 				}
 			} else {
-				context().logger().error("The Damaris need write access over the data (`{}')", name);
-				//Yshan? throw PDI::System_error{"The Damaris need write access over the data `{}' ", name};
+				// context().logger().error("The Damaris need write access on the data (`{}')", name);
+				throw PDI::System_error{"The Damaris need write access on the data `{}' ", name};
 			}
 		} else if (m_config.is_parameter_to_update(name)) {
 			context().logger().debug("m_config.is_parameter_to_update('{}') = `{}'", name, m_config.is_parameter_to_update(name));
