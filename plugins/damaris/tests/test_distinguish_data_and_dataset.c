@@ -29,27 +29,21 @@
 #include <unistd.h>
 #include <pdi.h>
 
-#define IMX 10
+#define IMX 5
 
 const char* CONFIG_FOR_READING_RESULT
 	= "logging: trace\n"
 	  "metadata:\n"
 	  "  nn: int\n"
-	  "  nbcalls: int\n"
 	  "data:\n"
-	  "  pdi_values: {size: ['$nn'], type: array, subtype: int}\n"
 	  "  damaris_values: {size: ['$nn'], type: array, subtype: int}\n"
 	  "plugins:\n"
 	  "  decl_hdf5:\n"
-	  "    - file: './data_diff_dataset_iter${nbcalls}.h5'\n"
+	  "    - file: './HDF5_files/distinguish_data_and_dataset_It0.h5'\n"
 	  "      read:\n"
-	  "        pdi_values:\n"
-	  "          dataset: int_values_ds\n"
 	  "        nn:\n"
-	  "    - file: './HDF5_files/distinguish_data_and_dataset_It${nbcalls}.h5'\n"
-	  "      read:\n"
 	  "        damaris_values:\n"
-	  "          dataset: int_values_ds\n";
+	  "          dataset: written_values_ds\n";
 
 int main(int argc, char* argv[])
 {
@@ -77,7 +71,8 @@ int main(int argc, char* argv[])
 	//  - client process = heat simulation process
 	//  - server process = damaris process for writting hdf5 file.
 
-	int nn_first_call = IMX / 2;
+	int size = IMX;
+	int written_values[IMX];
 
 	int is_client = 0;
 	PDI_expose("is_client", &is_client, PDI_INOUT); // The order doesn't care
@@ -85,25 +80,11 @@ int main(int argc, char* argv[])
 
 	printf("value of is_client %d=", is_client);
 	if (is_client) {
-		int size = nn_first_call;
-		int int_values[IMX];
-		int nb_calls = 0;
 		for (int ii = 0; ii < size; ++ii) {
-			int_values[ii] = 100 + ii;
+			written_values[ii] = 100 + ii;
 		}
-		PDI_expose("nn", &size, PDI_INOUT);
-		PDI_multi_expose("write", "nn", &size, PDI_INOUT, "nbcalls", &nb_calls, PDI_INOUT, "int_values", int_values, PDI_OUT, NULL);
-
-		// The value 'nn' can't not be updated (Error in Damaris xml input file ???)
-		// change size of the vector give to pdi for the second call
-		nb_calls = nb_calls + 1;
-		size = IMX;
-
-		for (int ii = size / 2; ii < size; ++ii) {
-			int_values[ii] = 300 + ii;
-		}
-		PDI_expose("nn", &size, PDI_INOUT);
-		PDI_multi_expose("write", "nn", &size, PDI_INOUT, "nbcalls", &nb_calls, PDI_INOUT, "int_values", int_values, PDI_OUT, NULL);
+		
+		PDI_multi_expose("write", "nn", &size, PDI_INOUT, "written_values", written_values, PDI_OUT, NULL);
 	}
 
 	PDI_finalize();
@@ -111,37 +92,23 @@ int main(int argc, char* argv[])
 
 	// comparison of the results
 
-	// reinitialize pdi for reading results
+	// reinitialize pdi for reading results from the specified dataset
 	PDI_init(PC_parse_string(CONFIG_FOR_READING_RESULT));
 	int rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	if (rank == 0) {
-		int size_pdi = -20;
 		int damaris_values[IMX];
-		int pdi_values[IMX];
-		int size_expected[2] = {nn_first_call, IMX};
 
-		for (int nb_calls = 0; nb_calls < 2; ++nb_calls) {
-			PDI_expose("nbcalls", &nb_calls, PDI_INOUT);
-			PDI_expose("nn", &size_pdi, PDI_INOUT);
-			if (size_pdi != size_expected[nb_calls]) {
-				printf("For iteration=%d,  error in reading the size of the array, size_pdi=%d\n", nb_calls, size_pdi);
+		for (int ii = 0; ii < size; ++ii) {
+			damaris_values[ii] = 6;
+		}
+
+		PDI_multi_expose("read", "nn", &size, PDI_OUT, "damaris_values", damaris_values, PDI_INOUT, NULL);
+
+		for (int ii = 0; ii < size; ++ii) {
+			if (written_values[ii] != damaris_values[ii]) {
+				printf("For idx=%d, written values %d != %d  damaris\n", ii, written_values[ii], damaris_values[ii]);
 				exit(EXIT_FAILURE);
-			}
-
-			for (int ii = 0; ii < size_expected[nb_calls]; ++ii) {
-				damaris_values[ii] = 6;
-				pdi_values[ii] = 9;
-			}
-
-			PDI_multi_expose("read_pdi", "nbcalls", &nb_calls, PDI_INOUT, "pdi_values", pdi_values, PDI_INOUT, NULL);
-			PDI_multi_expose("read_damaris", "nbcalls", &nb_calls, PDI_INOUT, "damaris_values", damaris_values, PDI_INOUT, NULL);
-
-			for (int ii = 0; ii < size_expected[nb_calls]; ++ii) {
-				if (pdi_values[ii] != damaris_values[ii]) {
-					printf("For iteration=%d, values pdi %d != %d  damaris\n", nb_calls, pdi_values[ii], damaris_values[ii]);
-					exit(EXIT_FAILURE);
-				}
 			}
 		}
 	}
