@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
 
 		for (int ii = 0; ii < size; ++ii) {
 			if (written_values[ii] != damaris_values[ii]) {
-				printf("For idx=%d, written values %d != %d  damaris\n", ii, written_values[ii], damaris_values[ii]);
+				printf("written_values[%d] (= %d) != damaris_values[%d] (= %d) \n", ii, written_values[ii], ii, damaris_values[ii]);
 				exit(EXIT_FAILURE);
 			}
 		}
