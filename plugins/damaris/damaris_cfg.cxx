@@ -714,6 +714,7 @@ void Damaris_cfg::parse_write_tree(PDI::Context& ctx, PC_tree_t write_tree_list)
 		std::string data_name = PDI::to_string(write_key); //the name of the data to write
 		Dataset_Write_Info ds_write_info;
 		ds_write_info.dataset_name = data_name; //the name of the dataset into which to write, if dataset not specified afterward!
+		ds_write_info.dataset_name = data_name; //the name of the dataset into which to write, if dataset not specified afterward!
 
 		//dataset
 		PC_tree_t ds_name_tree = PC_get(write_ds_tree, ".dataset");
@@ -757,7 +758,11 @@ void Damaris_cfg::parse_write_tree(PDI::Context& ctx, PC_tree_t write_tree_list)
 		}
 
 		m_datasets_to_write.emplace(data_name, ds_write_info);
+		m_datasets_to_write.emplace(data_name, ds_write_info);
 
+		load_desc(m_descs, ctx, data_name, Desc_type::DATA_TO_WRITE_WITH_BLOCK);
+
+		ctx.logger().info("ds_name = {}, data_name = {}", ds_write_info.dataset_name, data_name);
 		load_desc(m_descs, ctx, data_name, Desc_type::DATA_TO_WRITE_WITH_BLOCK);
 
 		ctx.logger().info("ds_name = {}, data_name = {}", ds_write_info.dataset_name, data_name);
