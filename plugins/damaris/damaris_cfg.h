@@ -127,6 +127,24 @@ struct DamarisXMLGenerators {
 	damaris::model::DamarisStoreXML store_; // Contains the extra elements that need to be part of a Damaris <store> (for HDF5 file w/r)
 };
 
+//CONST for PDI plugin of Damaris
+struct PDI_Common_Event_Names {
+    static constexpr const char* ON_INITIALIZE  = "on_initialize";
+    static constexpr const char* ON_EVENT       = "on_event";
+	//...
+    static constexpr const char* ON_FINALIZE    = "on_finalize";
+};
+
+// std::unordered_map<std::string, std::vector<std::string>> m_plugins_custom_events =
+// {
+//     { PDI_Common_Event_Names::ON_INITIALIZE, {} },
+//     { PDI_Common_Event_Names::ON_EVENT,      { "decl_hdf5", "user_code" } },
+// 	//...
+//     { PDI_Common_Event_Names::ON_FINALIZE,   {}                         },
+// };
+extern std::unordered_map<std::string, std::vector<std::string>> m_plugins_custom_events;
+
+
 class Damaris_cfg
 {
 	std::string m_xml_config_object;
@@ -176,6 +194,12 @@ class Damaris_cfg
 	static std::string m_is_client_dataset_name;
 	static std::string m_client_comm_get_dataset_name;
 
+	//PDI plugin of Damaris
+	/// <desc_name, is_metadata>
+	std::unordered_map<std::string, bool> m_pdi_plugin_descs; 
+	/// <configured_event_name> is used as customed event, configured in plugin config sections.
+	std::vector<std::string> m_pdi_plugin_configured_event_names;
+
 
 	const std::string XML_CONFIG_TEMPLATE = R"V0G0N(<?xml version="1.0"?>
  <simulation name="_SIM_NAME_" language="c" xmlns="http://damaris.gforge.inria.fr/damaris/model">
@@ -216,6 +240,7 @@ protected:
 	void parse_layouts_tree(PDI::Context& ctx, PC_tree_t layouts_tree_list);
 	void parse_storages_tree(PDI::Context& ctx, PC_tree_t storages_tree_list);
 	void parse_write_tree(PDI::Context& ctx, PC_tree_t write_tree_list);
+	void parse_pdi_plugin_cfg_tree(PDI::Context& ctx, PC_tree_t pdi_cfg_tree);
 	void parse_parameter_to_update_tree(PDI::Context& ctx, PC_tree_t ptu_tree_list, Desc_type op_type);
 	void parse_log_tree(PDI::Context& ctx, PC_tree_t config);
 
@@ -260,6 +285,7 @@ public:
 	std::string start_on_event() const;
 	std::string stop_on_event() const;
 	std::string end_iteration_on_event() const;
+	PC_tree_t   resolve_config(PC_tree_t node, std::string section);
 	std::string finalize_on_event() const;
 
 	// const std::unordered_map<std::string, std::unordered_set<int>>& recover_var() const;

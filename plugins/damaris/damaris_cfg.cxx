@@ -259,6 +259,14 @@ Damaris_cfg::Damaris_cfg(PDI::Context& ctx, PC_tree_t tree)
 				load_desc(m_descs, ctx, m_client_comm_get_dataset_name, Desc_type::CLIENT_COMM_GET);
 			}
 		}
+		// to configure the Damaris' PDI plugin
+		else if (key == "pdi")
+		{
+			//retrieve the config and parse
+    		parse_pdi_plugin_cfg_tree(ctx, resolve_config(value, ".pdi"));
+		}
+
+		ctx.logger().info("Damaris Plugin parsing configuration DONE!!!!!!!!!!!!!!!!!!!!!!!!!!");
 	});
 
 	std::string end_it_event_name = event_names.at(Event_type::DAMARIS_END_ITERATION);
@@ -768,6 +776,52 @@ void Damaris_cfg::parse_write_tree(PDI::Context& ctx, PC_tree_t write_tree_list)
 	});
 }
 
+void Damaris_cfg::parse_pdi_plugin_cfg_tree(PDI::Context& ctx, PC_tree_t pdi_plugin_cfg_tree)
+{
+	PC_tree_t metadata = PC_get(pdi_plugin_cfg_tree, ".metadata");
+	if (!PC_status(metadata)) {
+		int map_len = PDI::len(metadata);
+		for (int map_id = 0; map_id < map_len; ++map_id) {
+			m_pdi_plugin_descs.emplace(PDI::to_string(PC_get(metadata, "{%d}", map_id)).c_str(), true);
+		}
+		ctx.logger().info("Loaded {} metadata", map_len);
+	} else {
+		ctx.logger().debug("Metadata is not defined in specification tree");
+	}
+
+	PC_tree_t data = PC_get(pdi_plugin_cfg_tree, ".data");
+	if (!PC_status(data)) {
+		int map_len = PDI::len(data);
+		for (int map_id = 0; map_id < map_len; ++map_id) {
+			m_pdi_plugin_descs.emplace(PDI::to_string(PC_get(data, "{%d}", map_id)).c_str(), false);
+		}
+		ctx.logger().info("Loaded {} data", map_len);
+	} else {
+		ctx.logger().warn("Data is not defined in specification tree");
+	}
+
+	PC_tree_t plugins = PC_get(pdi_plugin_cfg_tree, ".plugins");
+	if (!PC_status(plugins)) {
+		int nb_plugins = 0;
+		PC_len(plugins, &nb_plugins);
+		for (int i = 0; i < nb_plugins; i++) {
+			char* plugin_name = nullptr;
+			PC_string(PC_get(plugins, "{%d}", i), &plugin_name);
+			PC_tree_t plugin_cfg = PC_get(plugins, "<%d>", i);
+			for (const auto& [event_key, _] : m_plugins_custom_events) {
+				PC_tree_t event_node = PC_get(plugin_cfg, ".%s", event_key.c_str());
+				if (!PC_status(event_node)) {
+					m_pdi_plugin_configured_event_names.push_back(event_key);
+				}
+			}
+			free(plugin_name);
+		}
+		ctx.logger().info("Loaded {} configured events", m_pdi_plugin_configured_event_names.size());
+	} else {
+		ctx.logger().warn("plugins is not defined in specification tree");
+	}
+}
+
 void Damaris_cfg::parse_parameter_to_update_tree(PDI::Context& ctx, PC_tree_t ptu_tree, Desc_type op_type)
 {
 	if (!PC_status(PC_get(ptu_tree, "[0]"))) { //Array [prm0,prm1,prm3,...] / it's a list of names only
@@ -1167,7 +1221,37 @@ std::string Damaris_cfg::end_iteration_on_event() const
 	return m_end_iteration_on_event;
 }
 
+PC_tree_t Damaris_cfg::resolve_config(PC_tree_t node, std::string section)
+{
+
+    PC_tree_t conf;
+
+    // Scalar: pdi: "config.yaml"
+    if (PC_status(PC_get(node, "[0]")))
+    {
+        std::string path = to_string(node);
+        conf = PC_parse_path(path.c_str());
+
+		if(!section.empty()) {
+			conf =  PC_get(conf, section.c_str());
+		}
+    }
+    else
+    {
+        conf = node;
+    }
+
+    return conf;
+}
+
 std::string Damaris_cfg::m_is_client_dataset_name = "";
 std::string Damaris_cfg::m_client_comm_get_dataset_name = "";
+std::unordered_map<std::string, std::vector<std::string>> m_plugins_custom_events =
+{
+    { PDI_Common_Event_Names::ON_INITIALIZE, {} },
+    { PDI_Common_Event_Names::ON_EVENT,      { "decl_hdf5", "user_code" } },
+	//...
+    { PDI_Common_Event_Names::ON_FINALIZE,   {}                         },
+};
 
 } // namespace damaris_pdi
