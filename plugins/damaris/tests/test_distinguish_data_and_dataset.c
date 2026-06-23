@@ -103,14 +103,14 @@ int main(int argc, char* argv[])
 		int damaris_values[size];
 
 		for (int ii = 0; ii < size; ++ii) {
+			written_values[ii] = 100 + ii;
 			damaris_values[ii] = 6;
 		}
 
 		PDI_multi_expose("read", "nn", &size, PDI_OUT, "damaris_values", damaris_values, PDI_INOUT, NULL);
 
 		for (int ii = 0; ii < size; ++ii) {
-			//if (written_values[ii] != damaris_values[ii]) {
-			if ((100 + ii) != damaris_values[ii]) {
+			if (written_values[ii] != damaris_values[ii]) {
 				printf("written_values[%d] (= %d) != damaris_values[%d] (= %d) \n", ii, written_values[ii], ii, damaris_values[ii]);
 				exit(EXIT_FAILURE);
 			}
