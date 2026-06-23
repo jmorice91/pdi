@@ -29,6 +29,8 @@
 #include <unistd.h>
 #include <pdi.h>
 
+#include <unistd.h>
+
 #define IMX 5
 
 const char* CONFIG_FOR_READING_RESULT
@@ -41,7 +43,6 @@ const char* CONFIG_FOR_READING_RESULT
 	  "  decl_hdf5:\n"
 	  "    - file: './HDF5_files/distinguish_data_and_dataset_It0.h5'\n"
 	  "      read:\n"
-	  "        nn:\n"
 	  "        damaris_values:\n"
 	  "          dataset: written_values_ds\n";
 
@@ -55,7 +56,7 @@ int main(int argc, char* argv[])
 
 	MPI_Comm main_comm = MPI_COMM_WORLD;
 	int world_size;
-	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+	MPI_Comm_size(main_comm, &world_size);
 	if (world_size != 2) {
 		fprintf(stderr, "Please use at least 2 mpi processes\n");
 		exit(1);
@@ -72,7 +73,7 @@ int main(int argc, char* argv[])
 	//  - server process = damaris process for writting hdf5 file.
 
 	int size = IMX;
-	int written_values[IMX];
+	int written_values[size];
 
 	int is_client = 0;
 	PDI_expose("is_client", &is_client, PDI_INOUT); // The order doesn't care
@@ -84,20 +85,22 @@ int main(int argc, char* argv[])
 			written_values[ii] = 100 + ii;
 		}
 		
-		PDI_multi_expose("write", "nn", &size, PDI_INOUT, "written_values", written_values, PDI_OUT, NULL);
+		PDI_multi_expose("write", "nn", &size, PDI_OUT, "written_values", written_values, PDI_OUT, NULL);
 	}
 
 	PDI_finalize();
 	PC_tree_destroy(&conf);
 
+	//A litle sleep to ensure the file to read is well created and closed!
+	usleep(100000); /* microseconds */
 	// comparison of the results
 
 	// reinitialize pdi for reading results from the specified dataset
 	PDI_init(PC_parse_string(CONFIG_FOR_READING_RESULT));
 	int rank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_rank(main_comm, &rank);
 	if (rank == 0) {
-		int damaris_values[IMX];
+		int damaris_values[size];
 
 		for (int ii = 0; ii < size; ++ii) {
 			damaris_values[ii] = 6;
@@ -106,7 +109,8 @@ int main(int argc, char* argv[])
 		PDI_multi_expose("read", "nn", &size, PDI_OUT, "damaris_values", damaris_values, PDI_INOUT, NULL);
 
 		for (int ii = 0; ii < size; ++ii) {
-			if (written_values[ii] != damaris_values[ii]) {
+			//if (written_values[ii] != damaris_values[ii]) {
+			if ((100 + ii) != damaris_values[ii]) {
 				printf("written_values[%d] (= %d) != damaris_values[%d] (= %d) \n", ii, written_values[ii], ii, damaris_values[ii]);
 				exit(EXIT_FAILURE);
 			}

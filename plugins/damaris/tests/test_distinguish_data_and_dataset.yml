@@ -9,11 +9,6 @@ pdi:
   plugins:
     trace: info
     mpi:
-    decl_hdf5:
-      - file: 'data_iter0.h5'
-        communicator: $mpi_comm
-        write: [nn]
-        on_event: write
     damaris:
       architecture:
         sim_name: distinguish_data_and_dataset
