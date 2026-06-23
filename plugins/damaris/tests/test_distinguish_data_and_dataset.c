@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 	int rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	if (rank == 0) {
-		int damaris_values[IMX];
+		int damaris_values[size];
 
 		for (int ii = 0; ii < size; ++ii) {
 			damaris_values[ii] = 6;
