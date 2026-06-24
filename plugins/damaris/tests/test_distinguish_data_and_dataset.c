@@ -91,15 +91,12 @@ int main(int argc, char* argv[])
 	PDI_finalize();
 	PC_tree_destroy(&conf);
 
-	//A litle sleep to ensure the file to read is well created and closed!
-	usleep(100000); /* microseconds */
 	// comparison of the results
 
 	// reinitialize pdi for reading results from the specified dataset
 	PDI_init(PC_parse_string(CONFIG_FOR_READING_RESULT));
-	int rank;
-	MPI_Comm_rank(main_comm, &rank);
-	if (rank == 0) {
+	//Let the Damaris server do the work. This way, we can be sure that the file is created correctly and can therefore be read.
+	if (!is_client) {
 		int damaris_values[size];
 
 		for (int ii = 0; ii < size; ++ii) {
