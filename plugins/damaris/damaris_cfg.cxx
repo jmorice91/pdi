@@ -1,6 +1,6 @@
 /*******************************************************************************
  * Copyright (C) 2015-2026 Commissariat a l'energie atomique et aux energies alternatives (CEA)
- * Copyright (C) 2024 National Institute for Research in Digital Science and Technology (Inria)
+ * Copyright (C) 2024-2026 Institut National de Recherche en Sciences et Technologies du Numérique (INRIA)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
