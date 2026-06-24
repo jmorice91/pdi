@@ -1233,7 +1233,10 @@ PC_tree_t Damaris_cfg::resolve_config(PC_tree_t node, std::string section)
         conf = PC_parse_path(path.c_str());
 
 		if(!section.empty()) {
-			conf =  PC_get(conf, section.c_str());
+			PC_tree_t section_three = PC_get(conf, section.c_str());
+			if (!PC_status(section_three)) {				
+				conf =  section_three;
+			} 
 		}
     }
     else
