@@ -1245,6 +1245,15 @@ PC_tree_t Damaris_cfg::resolve_config(PC_tree_t node, std::string section)
     return conf;
 }
 
+const std::unordered_map<std::string, bool> Damaris_cfg::descs_to_forward() const
+{
+	return m_pdi_plugin_descs;
+}
+const std::vector<std::string>& Damaris_cfg::events_to_forward() const
+{
+	return m_pdi_plugin_configured_event_names;
+}
+
 std::string Damaris_cfg::m_is_client_dataset_name = "";
 std::string Damaris_cfg::m_client_comm_get_dataset_name = "";
 std::unordered_map<std::string, std::vector<std::string>> m_plugins_custom_events =
