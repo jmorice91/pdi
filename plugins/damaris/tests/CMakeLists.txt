@@ -61,7 +61,6 @@ add_test(NAME test_damaris_scalar_type_one_cmd
      COMMAND "${RUNTEST_DIR}"  "/bin/bash" "-exc" "${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:test_damaris_scalar_type> ${MPIEXEC_POSTFLAGS} ${CMAKE_CURRENT_SOURCE_DIR}/test_damaris_scalar_type.yml && $<TARGET_FILE:read_damaris_scalar_type>" )
 set_property(TEST test_damaris_scalar_type_one_cmd PROPERTY TIMEOUT 10)
 
-
 # option 2:
 set(YAML_FILE1 ${CMAKE_CURRENT_SOURCE_DIR}/test_damaris_scalar_type.yml)
 set(NB_PROC1 2)
@@ -69,5 +68,4 @@ set(BASH_SCRIPT1 ${CMAKE_CURRENT_BINARY_DIR}/run_launch.sh)
 set(COMBINED_SCRIPT "${BASH_SCRIPT1} ${NB_PROC1} $<TARGET_FILE:test_damaris_scalar_type> ${YAML_FILE1} && $<TARGET_FILE:read_damaris_scalar_type>")
 add_test(NAME test_damaris_scalar_type_bash
      COMMAND "${RUNTEST_DIR}"  "/bin/bash" "-exc" "${COMBINED_SCRIPT}" )
-
 set_property(TEST test_damaris_scalar_type_bash PROPERTY TIMEOUT 10)

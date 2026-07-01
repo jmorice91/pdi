@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
 	if (argc != 2) {
 		fprintf(stderr, "Usage: argc=%d \n", argc);
 		fprintf(stderr, "Usage: %s <config_file>\n", argv[0]);
-		for (int ii=0; ii<argc; ++ii) {
+		for (int ii = 0; ii < argc; ++ii) {
 			fprintf(stderr, "Usage: argv[%d]=%s\n", ii, argv[ii]);
 		}
 		exit(1);
@@ -71,13 +71,13 @@ int main(int argc, char* argv[])
 		int size = nn_first_call;
 		int int_values[IMX];
 		int nb_calls = 0;
+
 		for (int ii = 0; ii < size; ++ii) {
 			int_values[ii] = 100 + ii;
 		}
 		PDI_expose("nn", &size, PDI_INOUT);
 		PDI_multi_expose("write", "nn", &size, PDI_INOUT, "nbcalls", &nb_calls, PDI_INOUT, "int_values", int_values, PDI_OUT, NULL);
 
-		// The value 'nn' can't not be updated (Error in Damaris xml input file ???)
 		// change size of the vector give to pdi for the second call
 		nb_calls = nb_calls + 1;
 		size = IMX;
@@ -85,6 +85,7 @@ int main(int argc, char* argv[])
 		for (int ii = size / 2; ii < size; ++ii) {
 			int_values[ii] = 300 + ii;
 		}
+
 		PDI_expose("nn", &size, PDI_INOUT);
 		PDI_multi_expose("write", "nn", &size, PDI_INOUT, "nbcalls", &nb_calls, PDI_INOUT, "int_values", int_values, PDI_OUT, NULL);
 	}

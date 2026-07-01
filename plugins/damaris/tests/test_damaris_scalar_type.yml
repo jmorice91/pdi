@@ -17,7 +17,6 @@ pdi:
         on_event: write
     damaris:
       architecture:
-        communicator: $MPI_COMM_WORLD
         sim_name: damaris_scalar_type
         domains: 1
         dedicated:
