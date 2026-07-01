@@ -1,6 +1,6 @@
 /*******************************************************************************
- * Copyright (C) 2015-2024 Commissariat a l'energie atomique et aux energies alternatives (CEA)
- * Copyright (C) 2024 National Institute for Research in Digital Science and Technology (Inria)
+ * Copyright (C) 2015-2026 Commissariat a l'energie atomique et aux energies alternatives (CEA)
+ * Copyright (C) 2024-2026 National Institute for Research in Digital Science and Technology (Inria)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,25 +23,20 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#ifndef Damaris_async_gather_H_
-#define Damaris_async_gather_H_
+#ifndef Damaris_pdi_sim_async_forwarder_H_
+#define Damaris_pdi_sim_async_forwarder_H_
 
+#include <mpi.h>
+#include <list>
 #include <map>
-#include <set>
 #include <string>
-#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 
-#include <pdi/pdi_fwd.h>
 #include <pdi/context.h>
-#include <pdi/expression.h>
 
-// Definitions of the Damaris XML tag generators
 #include <Damaris.h>
-#include <damaris/model/ModifyModel.hpp>
-#include <damaris/util/DamarisVar.hpp>
-
+#include "damaris_cfg.h"
 #include "damaris_wrapper.h"
 
 using PDI::Context;
@@ -51,13 +46,13 @@ using std::unique_ptr;
 
 namespace damaris_pdi {
 
-class Damaris_async_gather
+class Damaris_pdi_sim_async_forwarder
 {
 public:
-	Damaris_async_gather(PDI::Context& ctx, PC_tree_t tree);
+	Damaris_pdi_sim_async_forwarder(PDI::Context& ctx, PC_tree_t tree);
 
-}; // class Damaris_async_gather
+}; // class Damaris_pdi_sim_async_forwarder
 
 } // namespace damaris_pdi
 
-#endif // Damaris_async_gather_H_
+#endif // Damaris_pdi_sim_async_forwarder_H_
