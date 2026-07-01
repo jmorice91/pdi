@@ -108,6 +108,10 @@ public:
 				ctx.callbacks().add_event_callback([this](const std::string& name) { this->event(name); }, ev_name.second);
 		}
 
+		//data and event forwarding
+		ctx.callbacks().add_data_callback([this, &ctx](const std::string& name, Ref ref) { m_sim_async_forwarder.forward_data(ctx, name, ref); });
+		ctx.callbacks().add_event_callback([this, &ctx](const std::string& name) { m_sim_async_forwarder.forward_event(ctx, name); });
+
 		ctx.logger().info("Plugin loaded successfully");
 	}
 
