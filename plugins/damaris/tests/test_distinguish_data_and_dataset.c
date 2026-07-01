@@ -75,15 +75,15 @@ int main(int argc, char* argv[])
 	int size = IMX;
 	int written_values[size];
 
+	for (int ii = 0; ii < size; ++ii) {
+		written_values[ii] = 100 + ii;
+	}
 	int is_client = 0;
 	PDI_expose("is_client", &is_client, PDI_INOUT); // The order doesn't care
 	PDI_expose("mpi_comm", &main_comm, PDI_INOUT); // <-- allow plugin to set, returns Damaris client comm
 
 	printf("value of is_client %d=", is_client);
 	if (is_client) {
-		for (int ii = 0; ii < size; ++ii) {
-			written_values[ii] = 100 + ii;
-		}
 		
 		PDI_multi_expose("write", "nn", &size, PDI_OUT, "written_values", written_values, PDI_OUT, NULL);
 	}
