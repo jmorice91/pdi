@@ -1240,7 +1240,7 @@ PC_tree_t Damaris_cfg::resolve_config(PC_tree_t node, std::string section)
     PC_tree_t conf;
 
     // Scalar: pdi: "config.yaml"
-    if (PC_status(PC_get(node, "[0]")))
+	if (PDI::is_scalar(node))
     {
         std::string path = to_string(node);
         conf = PC_parse_path(path.c_str());
