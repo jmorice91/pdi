@@ -104,7 +104,14 @@ int main(int argc, char* argv[])
 			damaris_values[ii] = 6;
 		}
 
-		PDI_multi_expose("read", "nn", &size, PDI_OUT, "damaris_values", damaris_values, PDI_INOUT, NULL);
+        int damaris_size=0;
+        PDI_multi_expose("read_size", "nn", &damaris_size, PDI_INOUT, NULL);
+        // check that "size == damaris_size"
+        if (size != damaris_size) {
+			printf("Error: size (= %d) != damaris_size(= %d) \n", size, damaris_size);
+			exit(EXIT_FAILURE);
+		}
+		PDI_multi_expose("read", "damaris_values", damaris_values, PDI_INOUT, NULL);
 
 		for (int ii = 0; ii < size; ++ii) {
 			if (written_values[ii] != damaris_values[ii]) {
