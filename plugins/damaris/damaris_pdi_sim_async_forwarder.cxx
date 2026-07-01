@@ -41,16 +41,22 @@ Damaris_pdi_sim_async_forwarder::Damaris_pdi_sim_async_forwarder(
 }
 
 
-void Damaris_pdi_sim_async_forwarder::forward_data(PDI::Context& ctx, std::string& desc_name)
+void Damaris_pdi_sim_async_forwarder::forward_data(PDI::Context& ctx, const std::string& desc_name, PDI::Ref ref)
 {
-    assert(m_damaris_ref && "Damaris not initialized");
-    //m_damaris_ref->foo(...);
+    if(m_damaris_ref){
+        ctx.logger().info("=>>   data becoming available in the store and forwarded asynchronously to Damaris: {}", desc_name);
+        assert(m_damaris_ref && "Damaris not initialized");
+        //m_damaris_ref->foo(...);
+    }
 }
 
-void Damaris_pdi_sim_async_forwarder::forward_event(PDI::Context& ctx, std::string& event_name)
+void Damaris_pdi_sim_async_forwarder::forward_event(PDI::Context& ctx, const std::string& event_name)
 {
-    assert(m_damaris_ref && "Damaris not initialized");
-    //m_damaris_ref->foo(...);
+    if(m_damaris_ref){
+        ctx.logger().info("!!!                            named event forwarded asynchronously to Damaris: {}", event_name);
+        assert(m_damaris_ref && "Damaris not initialized");
+        //m_damaris_ref->foo(...);
+    }
 }
 
 }

@@ -34,6 +34,7 @@
 #include <unordered_set>
 
 #include <pdi/context.h>
+#include <pdi/ref_any.h>
 
 #include <Damaris.h>
 #include "damaris_cfg.h"
@@ -54,8 +55,8 @@ class Damaris_pdi_sim_async_forwarder
 public:
 	Damaris_pdi_sim_async_forwarder(Damaris_cfg& damaris_cfg, unique_ptr<Damaris_wrapper>& damaris_wrapper);
 
-	void forward_data(PDI::Context& ctx, std::string& desc_name);
-	void forward_event(PDI::Context& ctx, std::string& event_name);
+	void forward_data(PDI::Context& ctx, const std::string& desc_name, PDI::Ref ref);
+	void forward_event(PDI::Context& ctx, const std::string& event_name);
 }; // class Damaris_pdi_sim_async_forwarder
 
 } // namespace damaris_pdi
