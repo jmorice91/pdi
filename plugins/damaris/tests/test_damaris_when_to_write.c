@@ -35,25 +35,6 @@
 #define TOTAL_SIZE 10
 #define ITER_LIMIT 5
 
-const char* CONFIG_FOR_READING_RESULT
-	= "logging: trace                                               	\n"
-	  "metadata:                                                     	\n"
-	  "  nn: int                                                    	\n"
-	  "  iter_limit: int                                              	\n"
-	  "data:                                                       		\n"
-	  "  damaris_values: {size: ['$nn'], type: array, subtype: int}     \n"
-	  "plugins:                                                       	\n"
-	  "  decl_hdf5:                                                   	\n"
-	  "    - file: './HDF5_files/when_to_write_It$($iter_limit-1).h5'	\n"
-	  "      read:                                                    	\n"
-	  "        damaris_values:                                          \n"
-	  "          dataset: written_values_ds                             \n"
-	  "    - file: './HDF5_files/when_to_write_It$($iter_limit-1).h5'	\n"
-	  "      on_event: 'read_size'										\n"
-	  "      read:														\n"
-	  "        nn:														\n"
-	  "          size_of: written_values_ds								\n";
-
 int main(int argc, char* argv[])
 {
 	if (argc != 2) {
