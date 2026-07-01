@@ -64,3 +64,10 @@ add_executable (test_distinguish_data_and_dataset test_distinguish_data_and_data
 target_link_libraries (test_distinguish_data_and_dataset PDI::PDI_C MPI::MPI_C)
 
 add_test(NAME test_distinguish_data_and_dataset COMMAND "${RUNTEST_DIR}" "${MPIEXEC}" "${MPIEXEC_NUMPROC_FLAG}" 2 ${MPIEXEC_PREFLAGS} "$<TARGET_FILE:test_distinguish_data_and_dataset>" "${CMAKE_CURRENT_SOURCE_DIR}/test_distinguish_data_and_dataset.yml")
+
+# Test the "when" to write of damaris plugin
+configure_file(test_damaris_when_to_write.yml test_damaris_when_to_write.yml COPYONLY)
+add_executable (test_damaris_when_to_write test_damaris_when_to_write.c)
+target_link_libraries (test_damaris_when_to_write PDI::PDI_C MPI::MPI_C)
+
+add_test(NAME test_damaris_when_to_write COMMAND "${RUNTEST_DIR}" "${MPIEXEC}" "${MPIEXEC_NUMPROC_FLAG}" 2 ${MPIEXEC_PREFLAGS} "$<TARGET_FILE:test_damaris_when_to_write>" "${CMAKE_CURRENT_SOURCE_DIR}/test_damaris_when_to_write.yml")
