@@ -43,15 +43,14 @@ namespace damaris_pdi {
 
 class Damaris_pdi_sim_async_forwarder
 {
-	PDI::Context m_ctx_ref;
-	Damaris_cfg m_config_ref;
-	unique_ptr<Damaris_wrapper> m_damaris_ref;
+	Damaris_cfg& m_config_ref;
+	unique_ptr<Damaris_wrapper>& m_damaris_ref;
 
 public:
-	Damaris_pdi_sim_async_forwarder(PDI::Context& ctx, Damaris_cfg& damaris_cfg, unique_ptr<Damaris_wrapper>& damaris_wrapper);
+	Damaris_pdi_sim_async_forwarder(Damaris_cfg& damaris_cfg, unique_ptr<Damaris_wrapper>& damaris_wrapper);
 
-	void forward_data(std::string& desc_name);
-	void forward_event(td::string& event_name);
+	void forward_data(PDI::Context& ctx, std::string& desc_name);
+	void forward_event(PDI::Context& ctx, std::string& event_name);
 }; // class Damaris_pdi_sim_async_forwarder
 
 } // namespace damaris_pdi

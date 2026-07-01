@@ -31,25 +31,23 @@
 namespace damaris_pdi {
 
 Damaris_pdi_sim_async_forwarder::Damaris_pdi_sim_async_forwarder(
-	PDI::Context& ctx, 
-    Damaris_cfg& damaris_cfg, 
+	Damaris_cfg& damaris_cfg, 
     unique_ptr<Damaris_wrapper>& damaris_wrapper
 )
-    : m_ctx_ref(ctx),
-      m_config_ref(damaris_cfg),
+    : m_config_ref(damaris_cfg),
       m_damaris_ref(damaris_wrapper)
 {
     //constructor body
 }
 
 
-void Damaris_pdi_sim_async_forwarder::forward_data(std::string& desc_name)
+void Damaris_pdi_sim_async_forwarder::forward_data(PDI::Context& ctx, std::string& desc_name)
 {
     assert(m_damaris_ref && "Damaris not initialized");
     //m_damaris_ref->foo(...);
 }
 
-void Damaris_pdi_sim_async_forwarder::forward_event(td::string& event_name)
+void Damaris_pdi_sim_async_forwarder::forward_event(PDI::Context& ctx, std::string& event_name)
 {
     assert(m_damaris_ref && "Damaris not initialized");
     //m_damaris_ref->foo(...);
