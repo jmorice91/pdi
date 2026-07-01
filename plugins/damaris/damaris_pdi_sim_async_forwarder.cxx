@@ -1,6 +1,6 @@
 /*******************************************************************************
- * Copyright (C) 2015-2026 Commissariat a l'energie atomique et aux energies alternatives (CEA)
- * Copyright (C) 2025-2026 National Institute for Research in Digital Science and Technology (Inria)
+ * Copyright (C) 2026 Commissariat a l'energie atomique et aux energies alternatives (CEA)
+ * Copyright (C) 2026 National Institute for Research in Digital Science and Technology (Inria)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,37 +23,36 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#ifndef Damaris_pdi_sim_async_forwarder_H_
-#define Damaris_pdi_sim_async_forwarder_H_
+#include <assert.h>
+#include <pdi/ref_any.h>
+#include "damaris_pdi_sim_async_forwarder.h"
 
-#include <mpi.h>
-#include <list>
-#include <map>
-#include <string>
-#include <unordered_map>
-#include <unordered_set>
-
-#include <pdi/context.h>
-
-#include <Damaris.h>
-#include "damaris_cfg.h"
-#include "damaris_wrapper.h"
 
 namespace damaris_pdi {
 
-class Damaris_pdi_sim_async_forwarder
+Damaris_pdi_sim_async_forwarder::Damaris_pdi_sim_async_forwarder(
+	PDI::Context& ctx, 
+    Damaris_cfg& damaris_cfg, 
+    unique_ptr<Damaris_wrapper>& damaris_wrapper
+)
+    : m_ctx_ref(ctx),
+      m_config_ref(damaris_cfg),
+      m_damaris_ref(damaris_wrapper)
 {
-	PDI::Context m_ctx_ref;
-	Damaris_cfg m_config_ref;
-	unique_ptr<Damaris_wrapper> m_damaris_ref;
+    //constructor body
+}
 
-public:
-	Damaris_pdi_sim_async_forwarder(PDI::Context& ctx, Damaris_cfg& damaris_cfg, unique_ptr<Damaris_wrapper>& damaris_wrapper);
 
-	void forward_data(std::string& desc_name);
-	void forward_event(td::string& event_name);
-}; // class Damaris_pdi_sim_async_forwarder
+void Damaris_pdi_sim_async_forwarder::forward_data(std::string& desc_name)
+{
+    assert(m_damaris_ref && "Damaris not initialized");
+    //m_damaris_ref->foo(...);
+}
 
-} // namespace damaris_pdi
+void Damaris_pdi_sim_async_forwarder::forward_event(td::string& event_name)
+{
+    assert(m_damaris_ref && "Damaris not initialized");
+    //m_damaris_ref->foo(...);
+}
 
-#endif // Damaris_pdi_sim_async_forwarder_H_
+}

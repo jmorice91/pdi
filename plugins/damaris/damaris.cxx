@@ -43,6 +43,7 @@
 #include <pdi/ref_any.h>
 
 #include "damaris_api_call_handler.h"
+#include "damaris_pdi_sim_async_forwarder.h"
 #include "damaris_cfg.h"
 #include "damaris_wrapper.h"
 
@@ -54,6 +55,7 @@ class damaris_plugin: public PDI::Plugin
 {
 	Damaris_cfg m_config;
 	Damaris_api_call_handler m_event_handler;
+	Damaris_pdi_sim_async_forwarder m_sim_async_forwarder;
 
 	std::unique_ptr<Damaris_wrapper> m_damaris;
 
@@ -81,6 +83,11 @@ public:
 			  m_config.init_on_event(),
 			  m_config.start_on_event(),
 			  m_config.stop_on_event()
+		  }
+		, m_sim_async_forwarder{
+			  ctx,
+			  m_config,
+			  m_damaris
 		  }
 	{
 		std::string data_cb_concat = "";
