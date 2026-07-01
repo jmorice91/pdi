@@ -271,6 +271,8 @@ public:
 
 	const std::unordered_map<std::string, Desc_type>& descs() const;
 	const std::unordered_map<std::string, Event_type>& events() const;
+	const std::unordered_map<std::string, bool> descs_to_forward() const;
+	const std::vector<std::string>& events_to_forward() const;
 	const std::unordered_map<std::string, Dataset_Write_Info>& datasets_to_write() const;
 	const std::unordered_map<std::string, std::pair<std::string, Desc_type>>& parameter_to_update() const;
 
