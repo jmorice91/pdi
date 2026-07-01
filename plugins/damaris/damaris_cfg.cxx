@@ -265,8 +265,6 @@ Damaris_cfg::Damaris_cfg(PDI::Context& ctx, PC_tree_t tree)
 			//retrieve the config and parse
     		parse_pdi_plugin_cfg_tree(ctx, resolve_config(value, ".pdi"));
 		}
-
-		ctx.logger().info("Damaris Plugin parsing configuration DONE!!!!!!!!!!!!!!!!!!!!!!!!!!");
 	});
 
 	std::string end_it_event_name = event_names.at(Event_type::DAMARIS_END_ITERATION);
