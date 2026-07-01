@@ -101,7 +101,6 @@ public:
 			  m_config.stop_on_event()
 		  }
 		, m_sim_async_forwarder{
-			  ctx,
 			  m_config,
 			  m_damaris
 		  }
