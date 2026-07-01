@@ -105,7 +105,6 @@ int main(int argc, char* argv[])
 		int damaris_values[size];
 
 		for (int ii = 0; ii < size; ++ii) {
-			written_values[ii] = 100 + ii;
 			damaris_values[ii] = 6;
 		}
 
