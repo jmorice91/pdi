@@ -34,17 +34,17 @@
 #define IMX 5
 
 const char* CONFIG_FOR_READING_RESULT
-	= "logging: trace\n"
-	  "metadata:\n"
-	  "  nn: int\n"
-	  "data:\n"
-	  "  damaris_values: {size: ['$nn'], type: array, subtype: int}\n"
-	  "plugins:\n"
-	  "  decl_hdf5:\n"
+	= "logging: trace                                                                      \n"
+	  "metadata:                                                                             \n"
+	  "  nn: int                                                                                 \n"
+	  "data:                                                                                     \n"
+	  "  damaris_values: {size: ['$nn'], type: array, subtype: int}     \n"
+	  "plugins:                                                                                 \n"
+	  "  decl_hdf5:                                                                           \n"
 	  "    - file: './HDF5_files/distinguish_data_and_dataset_It0.h5'\n"
-	  "      read:\n"
-	  "        damaris_values:\n"
-	  "          dataset: written_values_ds\n";
+	  "      read:                                                                               \n"
+	  "        damaris_values:                                                           \n"
+	  "          dataset: written_values_ds                                        \n";
 
 int main(int argc, char* argv[])
 {
