@@ -73,7 +73,8 @@ add_library(pdi_damaris_plugin MODULE
 		damaris.cxx
         damaris_cfg.cxx
         damaris_wrapper.cxx
-        damaris_api_call_handler.cxx)
+        damaris_api_call_handler.cxx
+        damaris_pdi_sim_async_forwarder.cxx)
 target_link_libraries(pdi_damaris_plugin PUBLIC PDI::PDI_plugins ${Damaris_DEPS})
 set_target_properties(pdi_damaris_plugin PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
