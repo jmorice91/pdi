@@ -35,52 +35,51 @@
 
 constexpr char CONFIG_FOR_WRITING[] = R"(
 logging: debug
-pdi:
-  metadata:
-    nn: int
-    mpi_comm: MPI_Comm
-    is_client: int
-  data:
-    written_values: {size: ["$nn"], type: array, subtype: int}
-  plugins:
-    trace: info
-    mpi:
-    damaris:
-      architecture:
-        sim_name: distinguish_data_and_dataset
-        domains: 1
-        dedicated:
-          core: 1
-          node: 0
-      get_is_client: is_client
-      client_comm_get: mpi_comm
-      datasets:
-        - dataset:
-            name: written_values_ds
-            layout: written_values_layout
-            storage: hdf5_storage
-      layouts:
-        - layout:
-            name: written_values_layout
-            type: int
-            global: ["$nn"]
-            dimensions: ["$nn"]
-            ghosts: '0:0'
-            depends_on: [nn]
-      storages:
-        - storage:
-            name: hdf5_storage
-            type: HDF5
-            file_mode: Collective
-            files_path: ./HDF5_files/
-      write: 
-        written_values:
-          dataset: written_values_ds
-          position: ['0']
-      log:
-        rotation_size: 5
-        log_level: info
-        flush: true
+metadata:
+  nn: int
+  mpi_comm: MPI_Comm
+  is_client: int
+data:
+  written_values: {size: ["$nn"], type: array, subtype: int}
+plugins:
+  trace: info
+  mpi:
+  damaris:
+    architecture:
+      sim_name: distinguish_data_and_dataset
+      domains: 1
+      dedicated:
+        core: 1
+        node: 0
+    get_is_client: is_client
+    client_comm_get: mpi_comm
+    datasets:
+      - dataset:
+          name: written_values_ds
+          layout: written_values_layout
+          storage: hdf5_storage
+    layouts:
+      - layout:
+          name: written_values_layout
+          type: int
+          global: ["$nn"]
+          dimensions: ["$nn"]
+          ghosts: '0:0'
+          depends_on: [nn]
+    storages:
+      - storage:
+          name: hdf5_storage
+          type: HDF5
+          file_mode: Collective
+          files_path: ./HDF5_files/
+    write:
+      written_values:
+        dataset: written_values_ds
+        position: ['0']
+    log:
+      rotation_size: 5
+      log_level: info
+      flush: true
 )";
 
 
@@ -134,7 +133,6 @@ int main(int argc, char* argv[])
 
 	printf("value of is_client %d=", is_client);
 	if (is_client) {
-		
 		PDI_multi_expose("write", "nn", &size, PDI_OUT, "written_values", written_values, PDI_OUT, NULL);
 	}
 
