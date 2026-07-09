@@ -30,28 +30,76 @@
 
 #define IMX 10
 
+constexpr char CONFIG_YAML[] = R"(
+logging: debug
+pdi:
+  metadata:
+    nn: int
+    mpi_comm: MPI_Comm
+    is_client: int
+    nbcalls: int
+  data:
+    int_values: {size: ["$nn"], type: array, subtype: int}
+  plugins:
+    trace: info
+    mpi:
+    decl_hdf5:
+      - file: 'data_iter${nbcalls}.h5'
+        communicator: $mpi_comm
+        write: [nn, nbcalls, int_values]
+        on_event: write
+    damaris:
+      architecture:
+        sim_name: damaris_scalar_type
+        domains: 1
+        dedicated:
+          core: 1
+          node: 0
+      get_is_client: is_client
+      client_comm_get: mpi_comm
+      datasets:
+        - dataset:
+            name: int_values
+            layout: int_values_layout
+            storage: hdf5_storage
+      layouts:
+        - layout:
+            name: int_values_layout
+            type: int
+            global: ["$nn"]
+            dimensions: ["$nn"]
+            ghosts: '0:0'
+            depends_on: [nn]
+      storages:
+        - storage:
+            name: hdf5_storage
+            type: HDF5
+            file_mode: Collective
+            files_path: ./HDF5_files/
+      write: 
+        int_values:
+          dataset: int_values
+          position: ['0']
+      log:
+        rotation_size: 5
+        log_level: info
+        flush: true
+)";
+
 int main(int argc, char* argv[])
 {
-	if (argc != 2) {
-		fprintf(stderr, "Usage: argc=%d \n", argc);
-		fprintf(stderr, "Usage: %s <config_file>\n", argv[0]);
-		for (int ii = 0; ii < argc; ++ii) {
-			fprintf(stderr, "Usage: argv[%d]=%s\n", ii, argv[ii]);
-		}
-		exit(1);
-	}
 	MPI_Init(&argc, &argv);
 
 	MPI_Comm main_comm = MPI_COMM_WORLD;
 	int world_size;
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 	if (world_size != 2) {
-		fprintf(stderr, "Please use at least 2 mpi processes\n");
+		fprintf(stderr, "Please use 2 mpi processes\n");
 		exit(1);
 	}
 
 	// get specification tree
-	PC_tree_t conf = PC_parse_path(argv[1]);
+	PC_tree_t conf = PC_parse_string(CONFIG_YAML);
 
 	// initialize pdi
 	PDI_init(PC_get(conf, ".pdi"));
@@ -75,23 +123,22 @@ int main(int argc, char* argv[])
 		for (int ii = 0; ii < size; ++ii) {
 			int_values[ii] = 100 + ii;
 		}
-		PDI_expose("nn", &size, PDI_INOUT);
-		PDI_multi_expose("write", "nn", &size, PDI_INOUT, "nbcalls", &nb_calls, PDI_INOUT, "int_values", int_values, PDI_OUT, NULL);
+		PDI_multi_expose("write", "nn", &size, PDI_OUT, "nbcalls", &nb_calls, PDI_OUT, "int_values", int_values, PDI_OUT, NULL);
 
 		// change size of the vector give to pdi for the second call
 		nb_calls = nb_calls + 1;
 		size = IMX;
 
-		for (int ii = size / 2; ii < size; ++ii) {
+		for (int ii = 0; ii < size; ++ii) {
 			int_values[ii] = 300 + ii;
 		}
 
-		PDI_expose("nn", &size, PDI_INOUT);
-		PDI_multi_expose("write", "nn", &size, PDI_INOUT, "nbcalls", &nb_calls, PDI_INOUT, "int_values", int_values, PDI_OUT, NULL);
+		PDI_multi_expose("write", "nn", &size, PDI_OUT, "nbcalls", &nb_calls, PDI_OUT, "int_values", int_values, PDI_OUT, NULL);
 	}
 
 	PDI_finalize();
 	PC_tree_destroy(&conf);
+
 	MPI_Finalize();
 
 	return EXIT_SUCCESS;

@@ -28,26 +28,27 @@
 
 #define IMX 10
 
-const char* CONFIG_FOR_READING_RESULT
-	= "logging: trace                                                \n"
-	  "metadata:                                                     \n"
-	  "  nn: int                                                     \n"
-	  "  nbcalls: int                                                \n"
-	  "data:                                                         \n"
-	  "  pdi_values: {size: ['$nn'], type: array, subtype: int}      \n"
-	  "  damaris_values: {size: ['$nn'], type: array, subtype: int}  \n"
-	  "plugins:                                                      \n"
-	  "  trace: ~                                                    \n"
-	  "  decl_hdf5:                                                  \n"
-	  "    - file: './data_iter${nbcalls}.h5'                        \n"
-	  "      read:                                                   \n"
-	  "        pdi_values:                                           \n"
-	  "          dataset: int_values                                 \n"
-	  "        nn:                                                   \n"
-	  "    - file: './HDF5_files/damaris_scalar_type_It${nbcalls}.h5'\n"
-	  "      read:                                                   \n"
-	  "        damaris_values:                                       \n"
-	  "          dataset: int_values                                 \n";
+constexpr char CONFIG_FOR_READING_RESULT[] = R"(
+logging: trace
+metadata:
+  nn: int
+  nbcalls: int
+data:
+  pdi_values: {size: ['$nn'], type: array, subtype: int}
+  damaris_values: {size: ['$nn'], type: array, subtype: int}
+plugins:
+  trace: ~
+  decl_hdf5:
+    - file: './data_iter${nbcalls}.h5'
+      read:
+        pdi_values:
+          dataset: int_values
+        nn:
+    - file: './HDF5_files/damaris_scalar_type_It${nbcalls}.h5'
+      read:
+        damaris_values:
+          dataset: int_values
+)";
 
 int main(int argc, char* argv[])
 {
@@ -81,8 +82,8 @@ int main(int argc, char* argv[])
 			pdi_values[ii] = 9;
 		}
 
-		PDI_multi_expose("read_pdi", "nbcalls", &nb_calls, PDI_INOUT, "pdi_values", pdi_values, PDI_INOUT, NULL);
-		PDI_multi_expose("read_damaris", "nbcalls", &nb_calls, PDI_INOUT, "damaris_values", damaris_values, PDI_INOUT, NULL);
+		PDI_multi_expose("read_pdi", "nbcalls", &nb_calls, PDI_OUT, "pdi_values", pdi_values, PDI_IN, NULL);
+		PDI_multi_expose("read_damaris", "nbcalls", &nb_calls, PDI_OUT, "damaris_values", damaris_values, PDI_IN, NULL);
 
 		for (int ii = 0; ii < size_expected[nb_calls]; ++ii) {
 			if (pdi_values[ii] != damaris_values[ii]) {
