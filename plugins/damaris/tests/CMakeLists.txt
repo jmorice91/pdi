@@ -62,8 +62,9 @@ add_test(NAME test_damaris_depends_on
      "${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:damaris_write_int_array> ${MPIEXEC_POSTFLAGS} && $<TARGET_FILE:damaris_read_int_array>")
 set_property(TEST test_damaris_depends_on PROPERTY TIMEOUT 8)
 
-configure_file(damaris_dataset_distinguish.yml damaris_dataset_distinguish.yml COPYONLY)
-add_executable (damaris_dataset_distinguish damaris_dataset_distinguish.c)
+# configure_file(damaris_dataset_distinguish.yml damaris_dataset_distinguish.yml COPYONLY)
+add_executable (damaris_dataset_distinguish damaris_dataset_distinguish.cxx)
 target_link_libraries (damaris_dataset_distinguish PDI::PDI_C MPI::MPI_C)
 
-add_test(NAME damaris_dataset_distinguish COMMAND "${RUNTEST_DIR}" "${MPIEXEC}" "${MPIEXEC_NUMPROC_FLAG}" 2 ${MPIEXEC_PREFLAGS} "$<TARGET_FILE:damaris_dataset_distinguish>" "${CMAKE_CURRENT_SOURCE_DIR}/damaris_dataset_distinguish.yml")
+add_test(NAME damaris_dataset_distinguish 
+         COMMAND "${RUNTEST_DIR}" "${MPIEXEC}" "${MPIEXEC_NUMPROC_FLAG}" 2 ${MPIEXEC_PREFLAGS} "$<TARGET_FILE:damaris_dataset_distinguish>")

@@ -33,30 +33,78 @@
 
 #define IMX 5
 
-const char* CONFIG_FOR_READING_RESULT
-	= "logging: trace                                               	\n"
-	  "metadata:                                                     	\n"
-	  "  nn: int                                                    	\n"
-	  "data:                                                       		\n"
-	  "  damaris_values: {size: ['$nn'], type: array, subtype: int}     \n"
-	  "plugins:                                                       	\n"
-	  "  decl_hdf5:                                                   	\n"
-	  "    - file: './HDF5_files/distinguish_data_and_dataset_It0.h5'	\n"
-	  "      read:                                                    	\n"
-	  "        damaris_values:                                          \n"
-	  "          dataset: written_values_ds                             \n"
-	  "    - file: './HDF5_files/distinguish_data_and_dataset_It0.h5'	\n"
-	  "      on_event: 'read_size'										\n"
-	  "      read:														\n"
-	  "        nn:														\n"
-	  "          size_of: written_values_ds								\n";
+constexpr char CONFIG_FOR_WRITING[] = R"(
+logging: debug
+pdi:
+  metadata:
+    nn: int
+    mpi_comm: MPI_Comm
+    is_client: int
+  data:
+    written_values: {size: ["$nn"], type: array, subtype: int}
+  plugins:
+    trace: info
+    mpi:
+    damaris:
+      architecture:
+        sim_name: distinguish_data_and_dataset
+        domains: 1
+        dedicated:
+          core: 1
+          node: 0
+      get_is_client: is_client
+      client_comm_get: mpi_comm
+      datasets:
+        - dataset:
+            name: written_values_ds
+            layout: written_values_layout
+            storage: hdf5_storage
+      layouts:
+        - layout:
+            name: written_values_layout
+            type: int
+            global: ["$nn"]
+            dimensions: ["$nn"]
+            ghosts: '0:0'
+            depends_on: [nn]
+      storages:
+        - storage:
+            name: hdf5_storage
+            type: HDF5
+            file_mode: Collective
+            files_path: ./HDF5_files/
+      write: 
+        written_values:
+          dataset: written_values_ds
+          position: ['0']
+      log:
+        rotation_size: 5
+        log_level: info
+        flush: true
+)";
+
+
+constexpr char CONFIG_FOR_READING_RESULT[] = R"(
+logging: trace
+metadata:
+  nn: int
+data:
+  damaris_values: {size: ['$nn'], type: array, subtype: int}
+plugins:
+  decl_hdf5:
+    - file: './HDF5_files/distinguish_data_and_dataset_It0.h5'
+      read:
+        damaris_values:
+          dataset: written_values_ds
+    - file: './HDF5_files/distinguish_data_and_dataset_It0.h5'
+      on_event: 'read_size'
+      read:
+        nn:
+          size_of: written_values_ds
+)";
 
 int main(int argc, char* argv[])
 {
-	if (argc != 2) {
-		fprintf(stderr, "Usage: %s <config_file>\n", argv[0]);
-		exit(1);
-	}
 	MPI_Init(&argc, &argv);
 
 	MPI_Comm main_comm = MPI_COMM_WORLD;
@@ -67,11 +115,8 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 
-	// get specification tree
-	PC_tree_t conf = PC_parse_path(argv[1]);
-
 	// initialize pdi
-	PDI_init(PC_get(conf, ".pdi"));
+	PDI_init(PC_parse_string(CONFIG_FOR_WRITING));
 
 	// All processes must initialize Damaris with the XML configuration
 	//  - client process = heat simulation process
@@ -94,7 +139,6 @@ int main(int argc, char* argv[])
 	}
 
 	PDI_finalize();
-	PC_tree_destroy(&conf);
 
 	// comparison of the results
 
