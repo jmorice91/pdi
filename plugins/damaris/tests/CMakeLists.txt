@@ -28,7 +28,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-cmake_minimum_required(VERSION 3.16...3.29)
+cmake_minimum_required(VERSION 3.22...4.2)
 
 ##
 set(RUNTEST_DIR "${CMAKE_CURRENT_LIST_DIR}/../cmake/runtest-dir")
@@ -46,26 +46,18 @@ endif()
 "
 )
 
-# copy yaml file, to binary folder
-configure_file(test_damaris_scalar_type.yml test_damaris_scalar_type.yml COPYONLY)
-# configure generic launcher bash for test
-configure_file(run_launch.sh.in run_launch.sh)
+## first test: write an integer array with damaris and with decl_hdf5 and compare the result
+## The size of the array change between the two iterations
 
-add_executable(test_damaris_scalar_type test_damaris_scalar_type.c)
-add_executable(read_damaris_scalar_type read_damaris_scalar_type.c)
-target_link_libraries(test_damaris_scalar_type PDI::PDI_C MPI::MPI_C)
-target_link_libraries(read_damaris_scalar_type PDI::PDI_C)
+add_executable(damaris_write_int_array damaris_write_int_array.cxx)
+target_link_libraries(damaris_write_int_array  PDI::PDI_C MPI::MPI_C)
+target_compile_features(damaris_write_int_array  PUBLIC cxx_std_17)
 
-# option 1:
-add_test(NAME test_damaris_scalar_type_one_cmd
-     COMMAND "${RUNTEST_DIR}"  "/bin/bash" "-exc" "${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:test_damaris_scalar_type> ${MPIEXEC_POSTFLAGS} ${CMAKE_CURRENT_SOURCE_DIR}/test_damaris_scalar_type.yml && $<TARGET_FILE:read_damaris_scalar_type>" )
-set_property(TEST test_damaris_scalar_type_one_cmd PROPERTY TIMEOUT 10)
+add_executable(damaris_read_int_array damaris_read_int_array.cxx)
+target_link_libraries(damaris_read_int_array PDI::PDI_C)
+target_compile_features(damaris_read_int_array PUBLIC cxx_std_17)
 
-# option 2:
-set(YAML_FILE1 ${CMAKE_CURRENT_SOURCE_DIR}/test_damaris_scalar_type.yml)
-set(NB_PROC1 2)
-set(BASH_SCRIPT1 ${CMAKE_CURRENT_BINARY_DIR}/run_launch.sh)
-set(COMBINED_SCRIPT "${BASH_SCRIPT1} ${NB_PROC1} $<TARGET_FILE:test_damaris_scalar_type> ${YAML_FILE1} && $<TARGET_FILE:read_damaris_scalar_type>")
-add_test(NAME test_damaris_scalar_type_bash
-     COMMAND "${RUNTEST_DIR}"  "/bin/bash" "-exc" "${COMBINED_SCRIPT}" )
-set_property(TEST test_damaris_scalar_type_bash PROPERTY TIMEOUT 10)
+add_test(NAME test_damaris_depends_on
+     COMMAND "${RUNTEST_DIR}"  "/bin/bash" "-exc"
+     "${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:damaris_write_int_array> ${MPIEXEC_POSTFLAGS} && $<TARGET_FILE:damaris_read_int_array>")
+set_property(TEST test_damaris_depends_on PROPERTY TIMEOUT 8)

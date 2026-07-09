@@ -52,10 +52,6 @@ plugins:
 
 int main(int argc, char* argv[])
 {
-	if (argc != 1) {
-		fprintf(stderr, "Usage: %s <no config_file>\n", argv[0]);
-		exit(1);
-	}
 	// comparison of the results
 
 	// reinitialize pdi for reading results
@@ -67,7 +63,7 @@ int main(int argc, char* argv[])
 	int pdi_values[IMX];
 	int size_expected[2] = {nn_first_call, IMX};
 
-	printf("I read the value obtained by damaris and pdi.");
+	printf("I read the value obtained by damaris and pdi.\n");
 
 	for (int nb_calls = 0; nb_calls < 2; ++nb_calls) {
 		PDI_expose("nbcalls", &nb_calls, PDI_INOUT);
@@ -82,8 +78,8 @@ int main(int argc, char* argv[])
 			pdi_values[ii] = 9;
 		}
 
-		PDI_multi_expose("read_pdi", "nbcalls", &nb_calls, PDI_OUT, "pdi_values", pdi_values, PDI_IN, NULL);
-		PDI_multi_expose("read_damaris", "nbcalls", &nb_calls, PDI_OUT, "damaris_values", damaris_values, PDI_IN, NULL);
+		PDI_multi_expose("read_pdi", "pdi_values", pdi_values, PDI_IN, NULL);
+		PDI_multi_expose("read_damaris", "damaris_values", damaris_values, PDI_IN, NULL);
 
 		for (int ii = 0; ii < size_expected[nb_calls]; ++ii) {
 			if (pdi_values[ii] != damaris_values[ii]) {
