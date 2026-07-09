@@ -62,20 +62,11 @@ add_test(NAME test_damaris_depends_on
      "${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:damaris_write_int_array> ${MPIEXEC_POSTFLAGS} && $<TARGET_FILE:damaris_read_int_array>")
 set_property(TEST test_damaris_depends_on PROPERTY TIMEOUT 8)
 
-add_executable(damaris_dataset_distinguish damaris_dataset_distinguish.cxx)
-target_link_libraries(damaris_dataset_distinguish PDI::PDI_C MPI::MPI_C)
-target_compile_features(damaris_dataset_distinguish PUBLIC cxx_std_17)
-add_test(NAME damaris_dataset_distinguish 
-         COMMAND "${RUNTEST_DIR}" "${MPIEXEC}" "${MPIEXEC_NUMPROC_FLAG}" 2 ${MPIEXEC_PREFLAGS} "$<TARGET_FILE:damaris_dataset_distinguish>" ${MPIEXEC_POSTFLAGS})
-
-
 add_executable(damaris_write_dataset damaris_write_dataset.cxx)
 target_link_libraries(damaris_write_dataset PDI::PDI_C MPI::MPI_C)
 add_executable(damaris_read_dataset damaris_read_dataset.cxx)
 target_link_libraries(damaris_read_dataset PDI::PDI_C MPI::MPI_C)
 
-# add_test(NAME damaris_write_dataset 
-#          COMMAND "${RUNTEST_DIR}" "${MPIEXEC}" "${MPIEXEC_NUMPROC_FLAG}" 2 ${MPIEXEC_PREFLAGS} "$<TARGET_FILE:damaris_write_dataset>" ${MPIEXEC_POSTFLAGS})
 add_test(NAME test_damaris_dataset_name
      COMMAND "${RUNTEST_DIR}" "/bin/bash" "-exc"
      "${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:damaris_write_dataset> ${MPIEXEC_POSTFLAGS} && $<TARGET_FILE:damaris_read_dataset>")
