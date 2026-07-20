@@ -98,6 +98,7 @@ target_link_libraries(test_write_simple_array_int PDI::PDI_C MPI::MPI_C)
 # yaml file using with the previous test
 configure_file(test_write_multi_process_collective.yml test_write_multi_process_collective.yml COPYONLY)
 configure_file(test_write_multi_process_file_per_core.yml test_write_multi_process_file_per_core.yml COPYONLY)
+configure_file(test_write_multi_process_collective_2_servers.yml test_write_multi_process_collective_2_servers.yml COPYONLY)
 configure_file(test_write_metadata.yml test_write_metadata.yml COPYONLY)
 
 add_executable(test_read_simple_array_int test_read_simple_array_int.cxx)

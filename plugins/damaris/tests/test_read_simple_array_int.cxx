@@ -92,6 +92,66 @@ plugins:
 	EXPECT_EQ( pdi_values, damaris_values);
 }
 
+TEST_F(Gdamaris, 6processus_2serverCollective) 
+{
+	InitPdi(PC_parse_string(R"==(
+logging: trace
+metadata: { pdi_nn: int, damaris_nn: int }
+data:
+  pdi_values: {size: ['$pdi_nn'], type: array, subtype: int}
+  damaris_values: {size: ['$damaris_nn'], type: array, subtype: int}
+plugins:
+  trace: ~
+  decl_hdf5:
+    - file: './data_iter0.h5'
+      read:
+        pdi_values:
+          dataset: int_values
+        pdi_nn:
+          size_of: int_values
+    - file: './HDF5_files/damaris_scalar_type_It0.h5'
+      read:
+        damaris_values:
+          dataset: int_values
+        damaris_nn:
+          size_of: int_values
+)=="));
+
+	const int nb_total_proc = 6;
+	const int nb_simu_proc = 4;
+
+	std::string exec_name = "test_write_array_int";
+	std::string yaml_file = "test_write_multi_process_collective_2_servers.yml";
+	std::string run_command = "mpirun -np "+std::to_string(nb_total_proc)+" ../"+exec_name+" ../"+yaml_file;
+
+    int result = std::system(run_command.c_str());
+	ASSERT_EQ(result, 0) << "Error in the writing step with yaml file \'test_write_metadata.yml\'";
+
+	constexpr int const array_size_0 = 10*nb_simu_proc;
+	int global_size_pdi=0;
+	int global_size_damaris=0;
+
+	ASSERT_TRUE(std::filesystem::exists("data_iter0.h5"));
+	ASSERT_TRUE(std::filesystem::exists("./HDF5_files/damaris_scalar_type_It0.h5"));
+	std::system("tree");
+
+	PDI_expose("pdi_nn", &global_size_pdi, PDI_INOUT); // get global size
+	ASSERT_EQ( global_size_pdi, array_size_0);
+	PDI_expose("damaris_nn", &global_size_damaris, PDI_INOUT); // get global size
+	ASSERT_EQ( global_size_damaris, array_size_0);
+
+	std::array<int, array_size_0> pdi_values;
+	std::array<int, array_size_0> damaris_values;
+
+	PDI_multi_expose("read_pdi", "pdi_values", pdi_values.data(), PDI_INOUT, NULL);
+	PDI_multi_expose("read_damaris", "damaris_values", damaris_values.data(), PDI_INOUT, NULL);
+
+	EXPECT_EQ( pdi_values, damaris_values);
+}
+
+
+
+
 
 // This test need 6 MPI process ==> Do we want add this in the ci ?
 TEST_F(Gdamaris, 4processus_2server_file_per_core) 
