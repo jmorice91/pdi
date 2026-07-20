@@ -103,3 +103,12 @@ add_executable(test_read_simple_array_int test_read_simple_array_int.cxx)
 target_link_libraries(test_read_simple_array_int PDI::PDI_C GTest::gmock GTest::gmock_main GTest::gtest GTest::gtest_main)
 gtest_discover_tests(test_read_simple_array_int PROPERTIES TIMEOUT 3)
 
+## second test:
+## This test can be failed due to the value of 'sizeof' for the different type in damaris
+add_executable(test_write_check_multiple_type test_write_check_multiple_type.cxx)
+target_link_libraries(test_write_check_multiple_type PDI::PDI_C MPI::MPI_C)
+target_compile_features(test_write_check_multiple_type PUBLIC cxx_std_17)
+
+add_executable(test_read_type test_read_check_multiple_type.cxx)
+target_link_libraries(test_read_type PDI::PDI_C GTest::gmock GTest::gmock_main GTest::gtest)
+gtest_discover_tests(test_read_type PROPERTIES TIMEOUT 4)
