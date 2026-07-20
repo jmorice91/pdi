@@ -103,4 +103,6 @@ configure_file(test_write_metadata.yml test_write_metadata.yml COPYONLY)
 
 add_executable(test_read_simple_array_int test_read_simple_array_int.cxx)
 target_link_libraries(test_read_simple_array_int PDI::PDI_C GTest::gmock GTest::gmock_main GTest::gtest GTest::gtest_main)
-gtest_discover_tests(test_read_simple_array_int)
+gtest_add_tests(TARGET test_read_simple_array_int TEST_LIST GDamaris_multiprocess)
+
+set_tests_properties(${GDamaris_multiprocess} PROPERTIES TIMEOUT 8)

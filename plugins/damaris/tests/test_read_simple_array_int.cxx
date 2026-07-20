@@ -133,7 +133,6 @@ plugins:
 
 	ASSERT_TRUE(std::filesystem::exists("data_iter0.h5"));
 	ASSERT_TRUE(std::filesystem::exists("./HDF5_files/damaris_scalar_type_It0.h5"));
-	std::system("tree");
 
 	PDI_expose("pdi_nn", &global_size_pdi, PDI_INOUT); // get global size
 	ASSERT_EQ( global_size_pdi, array_size_0);
