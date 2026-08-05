@@ -153,7 +153,7 @@ plugins:
 
 
 // This test need 6 MPI process ==> Do we want add this in the ci ?
-TEST_F(Gdamaris, 4processus_2server_file_per_core) 
+TEST_F(Gdamaris, 4simu_2server_file_per_core) 
 {
 	const int nb_total_proc = 6;
 	const int nb_simu_proc = 4;
