@@ -92,7 +92,7 @@ plugins:
 	EXPECT_EQ( pdi_values, damaris_values);
 }
 
-TEST_F(Gdamaris, 6processus_2serverCollective) 
+TEST_F(Gdamaris, 4simu_2server_Collective) 
 {
 	InitPdi(PC_parse_string(R"==(
 logging: trace
