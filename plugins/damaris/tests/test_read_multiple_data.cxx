@@ -26,7 +26,6 @@
 #include <cstdlib>
 
 #include <filesystem>
-#include <iostream>
 #include <numeric>
 #include <ranges>
 
@@ -60,20 +59,20 @@ plugins:
 )=="));
 
 	std::string exec_name = "damaris_write_multiple_data";
-	std::string yaml_file = "test_write_file_2_data.yml";
+	std::string yaml_file = "test_write_1_file_2_data.yml";
 	std::string run_command = "mpirun -np 2 ../"+exec_name+" ../"+yaml_file;
 
 	constexpr int const array_size_0 = 10;
 
     int result = std::system(run_command.c_str());
-	ASSERT_EQ(result, 0) << "Error in the writing step with yaml file \'test_write_metadata.yml\'";
+	ASSERT_EQ(result, 0) << "Error in the writing step for input file "+yaml_file;
 
 	// dataset: int_values
 	std::string filename = "./HDF5_files/damaris_scalar_type_It0.h5";
 	ASSERT_TRUE(std::filesystem::exists(filename));
 
 	std::string dataset_name = "int_values";
-	std::string run_command1 = "h5dump -d \'"+dataset_name+"\' "+ filename; +" > /dev/null 2>&1";
+	std::string run_command1 = "h5dump -d \'"+dataset_name+"\' "+ filename +" > /dev/null 2>&1";
 		
 	int run_check_dataset = std::system(run_command1.c_str());
 	EXPECT_EQ(run_check_dataset, 0) << "Error: The dataset "+dataset_name+" doesn't exist in "+filename;
@@ -84,7 +83,7 @@ plugins:
 
 	// dataset: int22_values
 	dataset_name = "int22_values";
-	run_command1 = "h5dump -d \'"+dataset_name+"\' "+ filename; +" > /dev/null 2>&1";
+	run_command1 = "h5dump -d \'"+dataset_name+"\' "+ filename +" > /dev/null 2>&1";
 		
 	run_check_dataset = std::system(run_command1.c_str());
 	EXPECT_EQ(run_check_dataset, 0) << "Error: The dataset "+dataset_name+" doesn't exist in "+filename;
@@ -126,14 +125,14 @@ plugins:
 	constexpr int const array_size_0 = 10;
 
     int result = std::system(run_command.c_str());
-	ASSERT_EQ(result, 0) << "Error in the writing step with yaml file \'test_write_metadata.yml\'";
+	ASSERT_EQ(result, 0) << "Error in the writing step for input file "+yaml_file;
 
 	// dataset: int_values
 	std::string filename = "./HDF5_files/damaris_scalar_type_It0.h5";
 	ASSERT_TRUE(std::filesystem::exists(filename));
 
 	std::string dataset_name = "int_values";
-	std::string run_command1 = "h5dump -d \'"+dataset_name+"\' "+ filename; +" > /dev/null 2>&1";
+	std::string run_command1 = "h5dump -d \'"+dataset_name+"\' "+ filename +" > /dev/null 2>&1";
 		
 	int run_check_dataset = std::system(run_command1.c_str());
 	EXPECT_EQ(run_check_dataset, 0) << "Error: The dataset "+dataset_name+" doesn't exist in "+filename;

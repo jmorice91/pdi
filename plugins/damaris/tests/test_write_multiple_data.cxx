@@ -26,6 +26,7 @@
 #include <mpi.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <vector>
 #include <pdi.h>
 
 int main(int argc, char* argv[])
@@ -64,18 +65,17 @@ int main(int argc, char* argv[])
 		int dsize=10;
 		PDI_expose("nn", &dsize, PDI_INOUT); // get size
 
-		int int_values[dsize];
+		std::vector<int> int_values(dsize);
+		std::vector<int> int22_values(dsize);
 
 		for (int ii = 0; ii < dsize; ++ii) {
 			int_values[ii] = 100 + ii;
 		}
 		
-		int int22_values[dsize];
-
 		for (int ii = 0; ii < dsize; ++ii) {
 			int22_values[ii] = 300 + ii;
 		}
-		PDI_multi_expose("write", "int_values", int_values, PDI_OUT, "int22_values", int22_values, PDI_OUT, NULL);
+		PDI_multi_expose("write", "int_values", int_values.data(), PDI_OUT, "int22_values", int22_values.data(), PDI_OUT, NULL);
 	}
 
 	PDI_finalize();

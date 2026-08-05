@@ -78,8 +78,7 @@ add_test(NAME test_damaris_dataset_name
      COMMAND "${RUNTEST_DIR}" "/bin/bash" "-exc"
      "${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:damaris_write_dataset> ${MPIEXEC_POSTFLAGS} && $<TARGET_FILE:damaris_read_dataset>")
 
-
-configure_file(test_write_file_2_data.yml test_write_file_2_data.yml COPYONLY)
+configure_file(test_write_1_file_2_data.yml test_write_1_file_2_data.yml COPYONLY)
 configure_file(test_write_2_file_1_data.yml test_write_2_file_1_data.yml COPYONLY)
 
 add_executable(damaris_write_multiple_data  test_write_multiple_data.cxx)
