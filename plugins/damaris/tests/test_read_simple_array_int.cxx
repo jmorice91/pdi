@@ -36,7 +36,7 @@
 class Gdamaris: public ::PDI::PdiTest
 {};
 
-TEST_F(Gdamaris, 2processus_Collective) 
+TEST_F(Gdamaris, Simu2Server1Collective)
 {
 	InitPdi(PC_parse_string(R"==(
 logging: trace
@@ -69,7 +69,7 @@ plugins:
 	std::string run_command = "mpirun -np "+std::to_string(nb_total_proc)+" ../"+exec_name+" ../"+yaml_file;
 
     int result = std::system(run_command.c_str());
-	ASSERT_EQ(result, 0) << "Error in the writing step with yaml file \'test_write_metadata.yml\'";
+	ASSERT_EQ(result, 0) << "Error in the writing step with yaml file "+yaml_file;
 
 	constexpr int const array_size_0 = 10*nb_simu_proc;
 	int global_size_pdi=0;
@@ -92,7 +92,7 @@ plugins:
 	EXPECT_EQ( pdi_values, damaris_values);
 }
 
-TEST_F(Gdamaris, 4simu_2server_Collective) 
+TEST_F(Gdamaris, Simu4Server2Collective)
 {
 	InitPdi(PC_parse_string(R"==(
 logging: trace
@@ -125,7 +125,7 @@ plugins:
 	std::string run_command = "mpirun -np "+std::to_string(nb_total_proc)+" ../"+exec_name+" ../"+yaml_file;
 
     int result = std::system(run_command.c_str());
-	ASSERT_EQ(result, 0) << "Error in the writing step with yaml file \'test_write_metadata.yml\'";
+	ASSERT_EQ(result, 0) << "Error in the writing step with yaml file "+yaml_file;
 
 	constexpr int const array_size_0 = 10*nb_simu_proc;
 	int global_size_pdi=0;
@@ -149,11 +149,7 @@ plugins:
 }
 
 
-
-
-
-// This test need 6 MPI process ==> Do we want add this in the ci ?
-TEST_F(Gdamaris, 4simu_2server_file_per_core) 
+TEST_F(Gdamaris, Simu4Server2FilePerCore)
 {
 	const int nb_total_proc = 6;
 	const int nb_simu_proc = 4;
@@ -163,7 +159,7 @@ TEST_F(Gdamaris, 4simu_2server_file_per_core)
 	std::string run_command = "mpirun -np "+std::to_string(nb_total_proc)+" ../"+exec_name+" ../"+yaml_file;
 
     int result = std::system(run_command.c_str());
-	ASSERT_EQ(result, 0) << "Error in the writing step with yaml file \'test_write_metadata.yml\'";
+	ASSERT_EQ(result, 0) << "Error in the writing step with yaml file "+yaml_file;
 
 	ASSERT_TRUE(std::filesystem::exists("./HDF5_files/damaris_scalar_type_It0_Pr0.h5"));
 	ASSERT_TRUE(std::filesystem::exists("./HDF5_files/damaris_scalar_type_It0_Pr1.h5"));
@@ -177,7 +173,7 @@ TEST_F(Gdamaris, 4simu_2server_file_per_core)
 		std::string filename = "./HDF5_files/damaris_scalar_type_It0_Pr"+std::to_string(server_expected)+".h5";
 
 		// check the dataset exist in file
-		std::string run_command1 = "h5dump -d \'"+dataset_name+"\' "+ filename; +" > /dev/null 2>&1";
+		std::string run_command1 = "h5dump -d \'"+dataset_name+"\' "+ filename +" > /dev/null 2>&1";
 		
 		int run_check_dataset = std::system(run_command1.c_str());
 		EXPECT_EQ(run_check_dataset, 0) << "Error: The dataset "+dataset_name+" doesn't exist in "+filename;
@@ -197,7 +193,7 @@ TEST_F(Gdamaris, 4simu_2server_file_per_core)
 	}
 }
 
-TEST_F(Gdamaris, write_metadata) 
+TEST_F(Gdamaris, WriteMetadata)
 {
 	const int nb_total_proc = 2;
 	const int nb_simu_proc = 1;
@@ -207,7 +203,7 @@ TEST_F(Gdamaris, write_metadata)
 	std::string run_command = "mpirun -np "+std::to_string(nb_total_proc)+" ../"+exec_name+" ../"+yaml_file;
 
     int result = std::system(run_command.c_str());
-	ASSERT_EQ(result, 0) << "Error in the writing step with yaml file \'test_write_metadata.yml\'";
+	ASSERT_EQ(result, 0) << "Error in the writing step with yaml file "+yaml_file;
 
 	// check the dataset exist in file
 	std::system("tree");
@@ -217,13 +213,10 @@ TEST_F(Gdamaris, write_metadata)
 
 	ASSERT_TRUE(std::filesystem::exists(filename));
 
-	std::string run_command22 = "h5dump "+ filename;
-	int run11 = std::system(run_command22.c_str());
-
 	// check the dataset exist in file
 
 	std::string value_expected = "(0): 0, 1, 2, 3, 4, 5, 6, 7, 8, 9";
-	std::string run_command1 = "h5dump -d \'"+dataset_name+"\' "+ filename; +" | grep \'"+value_expected+"\' > /dev/null 2>&1";
+	std::string run_command1 = "h5dump -d \'"+dataset_name+"\' "+ filename +" | grep \'"+value_expected+"\' > /dev/null 2>&1";
 	
 	int run_check_dataset = std::system(run_command1.c_str());
 	EXPECT_EQ(run_check_dataset, 0) << "Error: The dataset "+dataset_name+" doesn't exist in "+filename;
