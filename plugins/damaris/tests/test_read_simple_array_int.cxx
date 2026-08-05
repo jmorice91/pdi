@@ -64,7 +64,7 @@ plugins:
 	const int nb_total_proc = 3;
 	const int nb_simu_proc = 2;
 
-	std::string exec_name = "test_write_array_int";
+	std::string exec_name = "test_write_simple_array_int";
 	std::string yaml_file = "test_write_multi_process_collective.yml";
 	std::string run_command = "mpirun -np "+std::to_string(nb_total_proc)+" ../"+exec_name+" ../"+yaml_file;
 
@@ -120,7 +120,7 @@ plugins:
 	const int nb_total_proc = 6;
 	const int nb_simu_proc = 4;
 
-	std::string exec_name = "test_write_array_int";
+	std::string exec_name = "test_write_simple_array_int";
 	std::string yaml_file = "test_write_multi_process_collective_2_servers.yml";
 	std::string run_command = "mpirun -np "+std::to_string(nb_total_proc)+" ../"+exec_name+" ../"+yaml_file;
 
@@ -154,7 +154,7 @@ TEST_F(Gdamaris, Simu4Server2FilePerCore)
 	const int nb_total_proc = 6;
 	const int nb_simu_proc = 4;
 
-	std::string exec_name = "test_write_array_int";
+	std::string exec_name = "test_write_simple_array_int";
 	std::string yaml_file = "test_write_multi_process_file_per_core.yml";
 	std::string run_command = "mpirun -np "+std::to_string(nb_total_proc)+" ../"+exec_name+" ../"+yaml_file;
 
@@ -198,7 +198,7 @@ TEST_F(Gdamaris, WriteMetadata)
 	const int nb_total_proc = 2;
 	const int nb_simu_proc = 1;
 
-	std::string exec_name = "test_write_array_int";
+	std::string exec_name = "test_write_simple_array_int";
 	std::string yaml_file = "test_write_metadata.yml";
 	std::string run_command = "mpirun -np "+std::to_string(nb_total_proc)+" ../"+exec_name+" ../"+yaml_file;
 
@@ -206,15 +206,12 @@ TEST_F(Gdamaris, WriteMetadata)
 	ASSERT_EQ(result, 0) << "Error in the writing step with yaml file "+yaml_file;
 
 	// check the dataset exist in file
-	std::system("tree");
-
 	std::string dataset_name = "/int_values";
 	std::string filename = "./HDF5_files/damaris_metadata_array_It0.h5";
 
 	ASSERT_TRUE(std::filesystem::exists(filename));
 
 	// check the dataset exist in file
-
 	std::string value_expected = "(0): 0, 1, 2, 3, 4, 5, 6, 7, 8, 9";
 	std::string run_command1 = "h5dump -d \'"+dataset_name+"\' "+ filename +" | grep \'"+value_expected+"\' > /dev/null 2>&1";
 	
