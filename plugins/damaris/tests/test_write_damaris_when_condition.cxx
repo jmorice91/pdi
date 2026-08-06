@@ -24,10 +24,10 @@
  ******************************************************************************/
 
 #include <mpi.h>
+#include <vector>
 #include <assert.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <vector>
 #include <pdi.h>
 
 int main(int argc, char* argv[])
@@ -56,8 +56,8 @@ int main(int argc, char* argv[])
 	//  - client process = heat simulation process
 	//  - server process = damaris process for writting hdf5 file.
 
-	int max_iter  = 35;
-	int frequency = 10; // frequency of writting the data 
+	int max_iter = 35;
+	int frequency = 10; // frequency of writting the data
 
 	int is_client = 0;
 	PDI_expose("is_client", &is_client, PDI_INOUT); // The order doesn't care
@@ -66,9 +66,9 @@ int main(int argc, char* argv[])
 	PDI_multi_expose("init_data", "frequency", &frequency, PDI_OUT, NULL);
 
 	printf("value of is_client %d=", is_client);
-	if (is_client) { 
-		for(int ii=0; ii<max_iter; ++ii) {
-			fprintf(stdout, "expose iter=%d \n",ii);
+	if (is_client) {
+		for (int ii = 0; ii < max_iter; ++ii) {
+			fprintf(stdout, "expose iter=%d \n", ii);
 			PDI_multi_expose("write", "iter", &ii, PDI_INOUT, NULL);
 		}
 	}
