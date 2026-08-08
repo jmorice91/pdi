@@ -29,13 +29,13 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <iostream>
 #include <random>
 #include <ranges>
 #include <type_traits>
-#include <iostream>
 
-#include "multiple_check_include.h"
 #include <pdi.h>
+#include "multiple_check_include.h"
 
 constexpr char CONFIG_YAML[] = R"(
 logging: debug
@@ -93,13 +93,15 @@ pdi:
 )";
 
 template <typename T>
-void write_file(const char *CONFIG_FILE, const std::string & name_var) {
+void write_file(const char* CONFIG_FILE, const std::string& name_var)
+{
+	if (type_name<T>() != name_var) {
+		throw std::runtime_error(
+			"The type name is not corresponding to it string name, type_name<T>() != name_var:" + type_name<T>() + " != " + name_var
+		);
+	}
 
-  if (type_name<T>() != name_var) {
-    throw std::runtime_error("The type name is not corresponding to it string name, type_name<T>() != name_var:" + type_name<T>() + " != " + name_var);
-  }
-
-  MPI_Comm main_comm = MPI_COMM_WORLD;
+	MPI_Comm main_comm = MPI_COMM_WORLD;
 	int world_size;
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 	if (world_size != 2) {
@@ -120,13 +122,17 @@ void write_file(const char *CONFIG_FILE, const std::string & name_var) {
 	PDI_expose("mpi_comm", &main_comm, PDI_INOUT); // <-- allow plugin to set, returns Damaris client comm
 
 	if (is_client) {
-    std::mt19937_64 m_random_generator{1010};
-    const int IMX = 10;
-    int size = IMX;
-    auto my_values = make_random<std::array<T,IMX>>(m_random_generator);
+		std::mt19937_64 m_random_generator{1010};
+		const int IMX = 10;
+		int size = IMX;
+		auto const my_values = random_vector<T, std::mt19937_64>(IMX, m_random_generator);
+		std::cout << "name_var=" << name_var << std::endl;
+		for (auto&& elem: my_values) {
+			std::cout << elem << " ";
+		}
+		std::cout << "/n" << std::endl;
+		std::string data_to_write = name_var + "_values";
 
-    std::string data_to_write=name_var+"_values";
-    
 		PDI_expose("nn", &size, PDI_INOUT);
 		PDI_multi_expose("write", data_to_write.c_str(), my_values.data(), PDI_OUT, NULL);
 	}
@@ -135,8 +141,9 @@ void write_file(const char *CONFIG_FILE, const std::string & name_var) {
 	PC_tree_destroy(&conf);
 }
 
-void run_test(const std::string & my_type_name,const char *CONFIG_TO_CHANGE) {
-	std::string my_new_config = replace_all(std::string(CONFIG_TO_CHANGE),std::string("MY8TYPE"),my_type_name);
+void run_test(const std::string& my_type_name, const char* CONFIG_TO_CHANGE)
+{
+	std::string my_new_config = replace_all(std::string(CONFIG_TO_CHANGE), std::string("MY8TYPE"), my_type_name);
 
 	if (my_type_name == "short") {
 		write_file<short>(my_new_config.c_str(), my_type_name);
@@ -157,7 +164,7 @@ int main(int argc, char* argv[])
 {
 	MPI_Init(&argc, &argv);
 
-	run_test(argv[1],CONFIG_YAML);
+	run_test(argv[1], CONFIG_YAML);
 
 	MPI_Finalize();
 
