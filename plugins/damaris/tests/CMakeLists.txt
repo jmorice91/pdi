@@ -103,3 +103,22 @@ add_executable(test_read_simple_array_int test_read_simple_array_int.cxx)
 target_link_libraries(test_read_simple_array_int PDI::PDI_C GTest::gmock GTest::gmock_main GTest::gtest GTest::gtest_main)
 gtest_discover_tests(test_read_simple_array_int PROPERTIES TIMEOUT 3)
 
+#################################
+# multidimensinal data
+configure_file(test_write_2D_data.yml test_write_2D_data.yml COPYONLY)
+configure_file(test_write_3D_data.yml test_write_3D_data.yml COPYONLY)
+
+add_executable(damaris_write_2D_data  test_write_2D_data.cxx)
+target_link_libraries(damaris_write_2D_data PDI::PDI_C MPI::MPI_CXX)
+target_compile_features(damaris_write_2D_data  PUBLIC cxx_std_17)
+
+add_executable(damaris_write_3D_data  test_write_3D_data.cxx)
+target_link_libraries(damaris_write_3D_data PDI::PDI_C MPI::MPI_CXX)
+target_compile_features(damaris_write_3D_data  PUBLIC cxx_std_17)
+
+add_executable(damaris_read_multidimensional_data test_read_multidimensional_data.cxx)
+target_compile_features(damaris_read_multidimensional_data PUBLIC cxx_std_17)
+target_link_libraries(damaris_read_multidimensional_data PDI::PDI_C GTest::gmock GTest::gmock_main GTest::gtest)
+gtest_discover_tests(damaris_read_multidimensional_data PROPERTIES TIMEOUT 3)
+# end multidimensional data
+##################################
