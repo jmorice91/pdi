@@ -1,5 +1,5 @@
 #=============================================================================
-# Copyright (C) 2015-2024 Commissariat a l'energie atomique et aux energies alternatives (CEA)
+# Copyright (C) 2015-2026 Commissariat a l'energie atomique et aux energies alternatives (CEA)
 # Copyright (C) 2024-2026 Institut national de recherche en informatique et en automatique (Inria)
 #
 # All rights reserved.
@@ -49,7 +49,7 @@ if (Damaris_FOUND)
     # This creates a definition of a pre-processor variable (PROG_HAS_DAMARIS)
     # that can be used as a guard in the C/C++ code:
     # target_compile_definitions(mysim PRIVATE PROG_HAS_DAMARIS)
-    list(APPEND Damaris_DEPS damaris)
+    list(APPEND Damaris_DEPS damaris damaris_interoperability_pdi)
     #list(APPEND Damaris_DEPS ${Damaris_LIBRARIES})
     include_directories(${Damaris_INCLUDE_DIRS} ${Damaris_INCLUDE_DIRS}/damaris)
     link_directories(${Damaris_LIBRARIES_PATH})

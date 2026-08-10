@@ -25,38 +25,71 @@
 
 #include <assert.h>
 #include <pdi/ref_any.h>
+#include <damaris/interoperability/pdi/PdiProtocol.hpp>   // MessageType, TypeDescriptor, WireFormat
 #include "damaris_pdi_sim_async_forwarder.h"
+#include "damaris_pdi_batched_forwarding_strategy.h"
+#include "damaris_pdi_immediate_forwarding_strategy.h"
 
 
 namespace damaris_pdi {
 
+namespace {
+
+unique_ptr<DamarisPdiForwardingStrategyInterface> make_strategy(Damaris_cfg& config, unique_ptr<Damaris_wrapper>& damaris_wrapper)
+{
+    // NOTE: get_pdi_forwarding_mode() is a placeholder name -- to be
+    // matched to the real accessor once added to Damaris_cfg (same remark
+    // as get_arch_domains_count() earlier: read once here, must be read
+    // identically on the PdiPlugin side for decoding, or the wire format
+    // silently desyncs).
+    using damaris::interoperability::pdi::ForwardingMode;
+
+    switch (config.get_pdi_forwarding_mode()) {
+    case ForwardingMode::Immediate:
+        return std::make_unique<DamarisPdiImmediateForwardingStrategy>(config, damaris_wrapper);
+    case ForwardingMode::Batched:
+    default:
+        return std::make_unique<DamarisPdiBatchedForwardingStrategy>(config, damaris_wrapper);
+    }
+}
+
+} // anonymous namespace
+
 Damaris_pdi_sim_async_forwarder::Damaris_pdi_sim_async_forwarder(
-	Damaris_cfg& damaris_cfg, 
+    Damaris_cfg& damaris_cfg,
     unique_ptr<Damaris_wrapper>& damaris_wrapper
 )
     : m_config_ref(damaris_cfg),
-      m_damaris_ref(damaris_wrapper)
+      m_damaris_ref(damaris_wrapper),
+      m_strategy(make_strategy(damaris_cfg, damaris_wrapper))
 {
     //constructor body
 }
 
-
-void Damaris_pdi_sim_async_forwarder::forward_data(PDI::Context& ctx, const std::string& desc_name, PDI::Ref ref)
+void Damaris_pdi_sim_async_forwarder::forward_share(PDI::Context& ctx, const std::string& desc_name, PDI::Ref ref)
 {
-    if(m_damaris_ref){
-        ctx.logger().info("=>>   data becoming available in the store and forwarded asynchronously to Damaris: {}", desc_name);
-        assert(m_damaris_ref && "Damaris not initialized");
-        //m_damaris_ref->foo(...);
-    }
+    if (!m_damaris_ref) return;
+    ctx.logger().info("=>>   data becoming available in the store and forwarded asynchronously to Damaris: {}", desc_name);
+    m_strategy->forward_share(desc_name, PDI::Ref_r{ref}.get(), ref.type()->buffersize());
+}
+
+void Damaris_pdi_sim_async_forwarder::forward_reclaim(PDI::Context& ctx, const std::string& desc_name, PDI::Ref ref)
+{
+    if (!m_damaris_ref) return;
+    ctx.logger().info("<<= data stop being available in the store, reclaim forwarded asynchronously to Damaris: {}", desc_name);
+    m_strategy->forward_reclaim(desc_name);
 }
 
 void Damaris_pdi_sim_async_forwarder::forward_event(PDI::Context& ctx, const std::string& event_name)
 {
-    if(m_damaris_ref){
-        ctx.logger().info("!!!                            named event forwarded asynchronously to Damaris: {}", event_name);
-        assert(m_damaris_ref && "Damaris not initialized");
-        //m_damaris_ref->foo(...);
-    }
+    if (!m_damaris_ref) return;
+    ctx.logger().info("!!!                            named event forwarded asynchronously to Damaris: {}", event_name);
+    m_strategy->forward_event(event_name);
+}
+
+void Damaris_pdi_sim_async_forwarder::on_iteration_end()
+{
+    if (m_strategy) m_strategy->on_iteration_end();
 }
 
 }
