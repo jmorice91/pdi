@@ -39,11 +39,14 @@
 #include <Damaris.h>
 #include "damaris_cfg.h"
 #include "damaris_wrapper.h"
+#include "damaris_pdi_forwarding_strategy_interface.h"
 
 using PDI::Context;
 using std::list;
 using std::string;
 using std::unique_ptr;
+
+enum class MessageType : uint8_t { Share, Reclaim, Event };
 
 namespace damaris_pdi {
 
@@ -51,12 +54,17 @@ class Damaris_pdi_sim_async_forwarder
 {
 	Damaris_cfg& m_config_ref;
 	unique_ptr<Damaris_wrapper>& m_damaris_ref;
+	unique_ptr<DamarisPdiForwardingStrategyInterface> m_strategy;
 
 public:
-	Damaris_pdi_sim_async_forwarder(Damaris_cfg& damaris_cfg, unique_ptr<Damaris_wrapper>& damaris_wrapper);
+    Damaris_pdi_sim_async_forwarder(Damaris_cfg& damaris_cfg, unique_ptr<Damaris_wrapper>& damaris_wrapper);
 
-	void forward_data(PDI::Context& ctx, const std::string& desc_name, PDI::Ref ref);
-	void forward_event(PDI::Context& ctx, const std::string& event_name);
+    void forward_share(PDI::Context& ctx, const std::string& desc_name, PDI::Ref ref);
+    void forward_reclaim(PDI::Context& ctx, const std::string& desc_name, PDI::Ref ref);
+    void forward_event(PDI::Context& ctx, const std::string& event_name);
+
+	// To be called from DamarisPlugin's iteration_end hook
+    void on_iteration_end();   // <--Reset the counters to 0
 }; // class Damaris_pdi_sim_async_forwarder
 
 } // namespace damaris_pdi

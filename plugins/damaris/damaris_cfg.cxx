@@ -278,8 +278,14 @@ Damaris_cfg::Damaris_cfg(Context& ctx, PC_tree_t tree)
 		// to configure the Damaris' PDI plugin
 		else if (key == "pdi")
 		{
-			//retrieve the config and parse
-    		parse_pdi_plugin_cfg_tree(ctx, resolve_config(value, ".pdi"));
+			// When pdi: is a scalar file path, preserve it so PdiPlugin can call
+			// PC_parse_path() on the server. resolve_config() loads the file and
+			// returns the parsed tree, discarding the original path.
+			std::string pdi_yaml_path;
+			if (PDI::is_scalar(value)) {
+				pdi_yaml_path = to_string(value);
+			}
+    		parse_pdi_plugin_cfg_tree(ctx, resolve_config(value, ".pdi"), pdi_yaml_path);
 		}
 	});
 
@@ -305,7 +311,7 @@ Damaris_cfg::Damaris_cfg(Context& ctx, PC_tree_t tree)
 
 	//CleanUp XML OBJECT
 	std::map<std::string, std::string> find_replace_map
-		= {{"_DATASET_ELEMENT_REGEX_", ""}, {"_STORAGE_ELEMENT_REGEX_", ""}, {"_PLUGINS_REGEX_", ""}, {"_SCRIPTS_REGEX_", ""}};
+		= {{"_DATASET_ELEMENT_REGEX_", ""}, {"_STORAGE_ELEMENT_REGEX_", ""}, {"_PLUGINS_REGEX_", ""}, {"_SCRIPTS_REGEX_", ""}, {"_PLUGINS_REGEX_", ""}};
 	damarisXMLModifyModel.RepalceWithRegEx(find_replace_map);
 
 	m_xml_config_object = damarisXMLModifyModel.GetConfigString();
@@ -780,8 +786,79 @@ void Damaris_cfg::parse_write_tree(Context& ctx, PC_tree_t write_tree_list)
 	});
 }
 
-void Damaris_cfg::parse_pdi_plugin_cfg_tree(Context& ctx, PC_tree_t pdi_plugin_cfg_tree)
+void Damaris_cfg::parse_pdi_plugin_cfg_tree(Context& ctx, PC_tree_t pdi_plugin_cfg_tree, const std::string& pdi_yaml_path)
 {
+    using damaris::interoperability::pdi::ForwardingMode;
+    using damaris::interoperability::pdi::parse_forwarding_mode;
+    using damaris::interoperability::pdi::kDefaultGenericChannelName;
+
+	// parse forwarding_channel_name: m_pdi_damaris_generic_channel
+	PC_tree_t forwarding_channel_name = PC_get(pdi_plugin_cfg_tree, ".fwd_channel_name");
+    m_pdi_damaris_generic_channel = kDefaultGenericChannelName;
+	if (!PC_status(forwarding_channel_name)) {
+		m_pdi_damaris_generic_channel = PDI::to_string(forwarding_channel_name);
+	}
+
+	// parse forwarding_mode: m_pdi_forwarding_mode
+	PC_tree_t forwarding_mode = PC_get(pdi_plugin_cfg_tree, ".fwd_mode");
+	m_pdi_forwarding_mode = ForwardingMode::Batched;  // safe default: lower footprint on <domains count>
+	if (!PC_status(forwarding_mode)) {
+		//to_long(forwarding_mode) 0|1, to_string(forwarding_mode): batched|immediate
+		m_pdi_forwarding_mode = parse_forwarding_mode(PDI::to_string(forwarding_mode));
+	}
+
+	// pdi_yaml_path is the file path extracted at the call site before resolve_config()
+	// discards it. Fall back to the deprecated .yaml_path key in the tree for backward compat.
+	std::string pdi_cfg_yaml_path = pdi_yaml_path;
+	if (pdi_cfg_yaml_path.empty()) {
+		PC_tree_t yaml_path_tree = PC_get(pdi_plugin_cfg_tree, ".yaml_path");
+		if (!PC_status(yaml_path_tree)) {
+			pdi_cfg_yaml_path = PDI::to_string(yaml_path_tree);
+		}
+	}
+
+	//PDI plugin of Damaris
+	damaris::model::DamarisPluginXML pdi_plugin_xml("Pdi", m_pdi_damaris_generic_channel);
+	pdi_plugin_xml.add_simple_param("pdi_cfg_yaml_path", pdi_cfg_yaml_path);
+	pdi_plugin_xml.add_simple_param("forwarding_mode",
+	    damaris::interoperability::pdi::to_string(m_pdi_forwarding_mode));
+	pdi_plugin_xml.add_simple_param("generic_channel", m_pdi_damaris_generic_channel);
+
+	m_damaris_plugins.emplace(pdi_plugin_xml.get_name(), pdi_plugin_xml);
+	std::map<std::string, std::string> pdi_plugin_replace_map
+		= {{"_PLUGINS_REGEX_", pdi_plugin_xml.ReturnXMLForPlugin() + "\n_PLUGINS_REGEX_"}};
+	damarisXMLModifyModel.RepalceWithRegEx(pdi_plugin_replace_map);
+
+	// pdi_damaris_exchange_config: inject generic channel layout + variable into <data>
+	{
+		const std::string generic_layout_name = m_pdi_damaris_generic_channel + "_layout";
+
+		damaris::model::DamarisLayoutXML layoutxml{};
+		layoutxml.layout_name_        = generic_layout_name;
+		layoutxml.layout_dimensions_  = std::to_string(m_pdi_generic_layout_size);
+		layoutxml.layout_dims_global_ = "";   // suppress global attribute
+		layoutxml.layout_visualizable_ = false;
+		layoutxml.set_datatype("char");
+
+		std::map<std::string, std::string> layout_replace_map
+			= {{"_DATASET_ELEMENT_REGEX_", layoutxml.ReturnXMLForLayout() + "\n_DATASET_ELEMENT_REGEX_"}};
+		damarisXMLModifyModel.RepalceWithRegEx(layout_replace_map);
+
+		damaris::model::DamarisVarXML vxml{};
+		vxml.var_name_    = m_pdi_damaris_generic_channel;
+		vxml.layout_name_ = generic_layout_name;
+		vxml.visualizable_ = false;
+		vxml.mesh_        = "";   // suppress mesh attribute
+		vxml.unit_        = "";   // suppress unit attribute
+		vxml.store_       = "";   // suppress store attribute
+		vxml.script_      = "";   // suppress script attribute
+		vxml.select_mem_  = "";   // suppress select-mem attribute
+
+		std::map<std::string, std::string> var_replace_map
+			= {{"_DATASET_ELEMENT_REGEX_", vxml.ReturnXMLForVariable() + "\n_DATASET_ELEMENT_REGEX_"}};
+		damarisXMLModifyModel.RepalceWithRegEx(var_replace_map);
+	}
+
 	// parse metadata
 	PC_tree_t metadata = PC_get(pdi_plugin_cfg_tree, ".metadata");
 	if (!PC_status(metadata)) {
@@ -1278,5 +1355,23 @@ std::unordered_map<std::string, std::vector<std::string>> m_plugins_custom_event
 	//...
     { PDI_Common_Event_Names::ON_FINALIZE,   {}                         },
 };
+
+int32_t Damaris_cfg::get_arch_domains_count() const
+{
+	return m_arch_domains;	
+}
+size_t Damaris_cfg::get_generic_channel_layout_size() const
+{
+	return m_pdi_generic_layout_size;
+}
+damaris::interoperability::pdi::ForwardingMode Damaris_cfg::get_pdi_forwarding_mode() const
+{
+	return m_pdi_forwarding_mode;
+}
+
+std::string Damaris_cfg::get_generic_channel_name() const
+{
+	return m_pdi_damaris_generic_channel;
+}
 
 } // namespace damaris_pdi

@@ -41,6 +41,7 @@
 #include <Damaris.h>
 #include <damaris/model/ModifyModel.hpp>
 #include <damaris/util/DamarisVar.hpp>
+#include <damaris/interoperability/pdi/PdiProtocol.hpp>   // MessageType, TypeDescriptor, WireFormat
 
 #include "damaris_wrapper.h"
 
@@ -178,6 +179,7 @@ class Damaris_cfg
 	std::unordered_map<std::string, damaris::model::DamarisParameterXML> m_parameters;
 	std::unordered_map<std::string, damaris::model::DamarisStoreXML> m_storages;
 	std::unordered_map<std::string, damaris::model::DamarisGroupXML> m_groups;
+	std::unordered_map<std::string, damaris::model::DamarisPluginXML> m_damaris_plugins;
 
 	std::unordered_map<std::string, Desc_type> m_descs;
 	std::unordered_map<std::string, Event_type> m_events;
@@ -203,7 +205,20 @@ class Damaris_cfg
 	std::unordered_map<std::string, bool> m_pdi_plugin_descs; 
 	/// <configured_event_name> is used as customed event, configured in plugin config sections.
 	std::vector<std::string> m_pdi_plugin_configured_event_names;
-
+	size_t m_pdi_generic_layout_size = 65536;//To be set to the max size of forwarded data
+	damaris::interoperability::pdi::ForwardingMode m_pdi_forwarding_mode;
+	std::string m_pdi_damaris_generic_channel = "";
+	std::string pdi_damaris_exchange_config = R"V0G0N("
+        <layout name="_PDI_DAMARIS_GENERIC_LAYOUT_" type="char" dimensions="_PDI_DAMARIS_GENERIC__LAYOUT_SIZE_" />
+        <variable name="_PDI_DAMARIS_GENERIC_CHANNEL_" layout="_PDI_DAMARIS_GENERIC_LAYOUT_" type="scalar" visualizable="false" />
+		)V0G0N";
+	std::string pdi_plugin_damaris_config = R"V0G0N("        
+        <plugin name="Pdi" datasets="_PDI_DAMARIS_GENERIC_CHANNEL_" data-dependency-mode="ALL_EXPOSED">
+            <pdi_cfg_yaml_path value="_PDI_CFG_YAML_PATH_" />
+            <forwarding_mode value="_FORWARDING_MODE_" />
+            <generic_channel value="_GENERIC_CHANNEL_" />
+        </plugin>
+		)V0G0N";
 
 	const std::string XML_CONFIG_TEMPLATE = R"V0G0N(<?xml version="1.0"?>
  <simulation name="_SIM_NAME_" language="c" xmlns="http://damaris.gforge.inria.fr/damaris/model">
@@ -222,9 +237,7 @@ class Damaris_cfg
      <storage>
          _STORAGE_ELEMENT_REGEX_        
      </storage>
- 
-     _PLUGINS_REGEX_
- 
+  
      <actions>
      </actions>
  
@@ -232,6 +245,10 @@ class Damaris_cfg
      _SCRIPTS_REGEX_
      </scripts>
  
+    <plugins>
+     _PLUGINS_REGEX_
+    </plugins>
+
      <log FileName="./log/_SIM_LOG_NAME_" RotationSize="_LOG_ROTATION_SIZE_" LogFormat="[%TimeStamp%]: %Message%"  Flush="_LOG_FLUSH_"  LogLevel="_LOG_LEVEL_" />
      
  </simulation>)V0G0N";
@@ -244,7 +261,7 @@ protected:
 	void parse_layouts_tree(Context& ctx, PC_tree_t layouts_tree_list);
 	void parse_storages_tree(Context& ctx, PC_tree_t storages_tree_list);
 	void parse_write_tree(Context& ctx, PC_tree_t write_tree_list);
-	void parse_pdi_plugin_cfg_tree(Context& ctx, PC_tree_t write_tree_list);	
+	void parse_pdi_plugin_cfg_tree(Context& ctx, PC_tree_t pdi_cfg_tree, const std::string& pdi_yaml_path = "");
 	void parse_parameter_to_update_tree(Context& ctx, PC_tree_t ptu_tree_list, Desc_type op_type);
 	void parse_log_tree(Context& ctx, PC_tree_t config);
 
@@ -309,6 +326,43 @@ public:
 	void reset_parameter_depends_on(std::vector<std::string> prm_list);
 
 	void reset_all_parameters_depends_on();
+
+	// ---------------------------------------------------------------
+    // Signature assumed from usage in BatchedPdiForwardingStrategy / ImmediatePdiForwardingStrategy
+    // (both call it as: int32_t available_blocks = m_config_ref.get_arch_domains_count();)
+    // ---------------------------------------------------------------
+    int32_t get_arch_domains_count() const;
+
+    // ---------------------------------------------------------------
+    // TO ADD -- byte size of the pdi_generic_channel layout
+    // (e.g. <layout name="pdi_generic_layout" type="char" dimensions="65536"/>
+    //  => 65536, since type="char" means 1 byte per element)
+    // ---------------------------------------------------------------
+    size_t get_generic_channel_layout_size() const;
+
+    // ---------------------------------------------------------------
+    // TO ADD -- reads <forwarding_mode value="batched|immediate"/> from
+    // the PDI plugin's XML section. Defaults to Batched if the parameter
+    // is absent (safe default: lower footprint on the global domains
+    // budget, matches the mode already validated first).
+    // ---------------------------------------------------------------
+    damaris::interoperability::pdi::ForwardingMode get_pdi_forwarding_mode() const;
+
+	// ---------------------------------------------------------------------
+	// get_generic_channel_name()
+	//
+	// Reads <generic_channel_name value="..."/> from the PDI plugin's own
+	// XML section (same section as <pdi_cfg_yaml_path>, cf. PdiPlugin::parseXML
+	// for the exact DOM traversal pattern already used for that parameter).
+	// Falls back to kDefaultGenericChannelName if the parameter is absent, so
+	// existing configs that don't set it explicitly keep working unchanged.
+	//
+	// IMPORTANT: PdiPlugin's own equivalent accessor (server side) MUST parse
+	// this exact same XML parameter -- never hardcode "pdi_generic_channel"
+	// as a literal on either side, and never let the two sides drift apart
+	// by using two different default values.
+	// ---------------------------------------------------------------------
+	std::string get_generic_channel_name() const;
 }; // class Damaris_cfg
 
 } // namespace damaris_pdi

@@ -126,7 +126,12 @@ public:
 
 		//data and event forwarding
 		for (auto&& desc: m_config.descs_to_forward()) { 
-			ctx.callbacks().add_data_callback([this, &ctx](const std::string& name, Ref ref) { m_sim_async_forwarder.forward_data(ctx, name, ref); }, desc.first);
+			ctx.callbacks().add_data_callback([this, &ctx](const std::string& name, Ref ref) { m_sim_async_forwarder.forward_share(ctx, name, ref); }, desc.first);
+		
+			ctx.callbacks().add_data_remove_callback([this, &ctx](const std::string& name, Ref ref) {
+					m_sim_async_forwarder.forward_reclaim(ctx, name, ref);
+				}, desc.first
+			);
 		}
 		for (auto&& event: m_config.events_to_forward()) {
 			ctx.callbacks().add_event_callback([this, &ctx](const std::string& name) { m_sim_async_forwarder.forward_event(ctx, name); }, event);
@@ -261,6 +266,7 @@ public:
 							} else { //Non Damaris call event
 							}
 						}
+						m_sim_async_forwarder.on_iteration_end();
 						datasets_to_write_count = 0;
 					}
 				}
