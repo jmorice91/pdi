@@ -111,10 +111,12 @@ public:
             );
         }
 
+        // damaris_write_block always writes exactly block_capacity bytes from the pointer;
+        // pad the buffer to a full multiple so we never read beyond the allocation.
+        m_iteration_buffer.resize(static_cast<size_t>(blocks_needed) * block_capacity, std::byte{0});
+
         for (int32_t b = 0; b < blocks_needed; ++b) {
             size_t offset = static_cast<size_t>(b) * block_capacity;
-            size_t len = std::min(block_capacity, m_iteration_buffer.size() - offset);
-            (void)len; // damaris_write_block always writes `dimensions` bytes; the layout must be sized accordingly
             damaris_write_block("pdi_generic_channel", b, m_iteration_buffer.data() + offset);
         }
 
