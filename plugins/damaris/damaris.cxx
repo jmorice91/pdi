@@ -110,9 +110,9 @@ public:
 
 		//data and event forwarding
 		for (auto&& desc: m_config.descs_to_forward()) { 
-			ctx.callbacks().add_data_callback([this, &ctx](const std::string& name, Ref ref) { m_sim_async_forwarder.forward_share(ctx, name, ref); }, desc.first);
+			ctx.callbacks().add_data_callback([this, &ctx](const std::string& name, PDI::Ref ref) { m_sim_async_forwarder.forward_share(ctx, name, ref); }, desc.first);
 		
-			ctx.callbacks().add_data_remove_callback([this, &ctx](const std::string& name, Ref ref) {
+			ctx.callbacks().add_data_remove_callback([this, &ctx](const std::string& name, PDI::Ref ref) {
 					m_sim_async_forwarder.forward_reclaim(ctx, name, ref);
 				}, desc.first
 			);
@@ -126,10 +126,9 @@ public:
 
 	void data(const std::string& name, PDI::Ref ref)
 	{
-		ensure_damaris_is_initialized("");
-
 		//Update damaris parameters, which depend on PDI metadatas
 		if (m_config.is_needed_metadata(name)) {
+			ensure_damaris_is_initialized("");
 			std::unordered_map<std::string, std::pair<std::string, std::string>> updatable_parameters = m_config.get_updatable_parameters(context());
 
 			std::string prm_name_concat = "";
@@ -172,6 +171,7 @@ public:
 				context().logger().debug("data `{}' is a needed metadata for the evaluation of parameters {}", name, prm_name_concat);
 			}
 		} else if (m_config.is_dataset_to_write(name)) {
+			ensure_damaris_is_initialized("");
 			if (PDI::Ref_r rref = ref) {
 				Dataset_Write_Info ds_write_info = m_config.get_dataset_write_info(name);
 
@@ -265,6 +265,7 @@ public:
 				throw PDI::System_error{"The Damaris need write access on the data `{}' ", name};
 			}
 		} else if (m_config.is_parameter_to_update(name)) {
+			ensure_damaris_is_initialized("");
 			context().logger().debug("m_config.is_parameter_to_update('{}') = `{}'", name, m_config.is_parameter_to_update(name));
 			std::pair<std::string, Desc_type> prm_to_update_info = m_config.get_parameter_to_update_info(name);
 			std::string prm_name = prm_to_update_info.first;
@@ -297,6 +298,7 @@ public:
 		//is_client_get !?
 		else if (name == m_config.is_client_dataset_name())
 		{
+			ensure_damaris_is_initialized("");
 			context().logger().debug("'{}' == m_config.is_client_dataset_name() = '{}'", name, (name == m_config.is_client_dataset_name()));
 
 			if (PDI::Ref_w wref = ref) {
@@ -310,6 +312,7 @@ public:
 		//client_comm_get !?
 		else if (name == m_config.client_comm_get_dataset_name())
 		{
+			ensure_damaris_is_initialized("");
 			if (PDI::Ref_w wref = ref) {
 				MPI_Comm client_comm;
 				int err = m_damaris->damaris_pdi_client_comm_get(&client_comm);

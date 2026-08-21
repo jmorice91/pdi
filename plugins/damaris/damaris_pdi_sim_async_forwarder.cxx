@@ -35,7 +35,7 @@ namespace damaris_pdi {
 
 namespace {
 
-unique_ptr<DamarisPdiForwardingStrategyInterface> make_strategy(Damaris_cfg& config, unique_ptr<Damaris_wrapper>& damaris_wrapper)
+std::unique_ptr<DamarisPdiForwardingStrategyInterface> make_strategy(Damaris_cfg& config, std::unique_ptr<Damaris_wrapper>& damaris_wrapper)
 {
     // NOTE: get_pdi_forwarding_mode() is a placeholder name -- to be
     // matched to the real accessor once added to Damaris_cfg (same remark
@@ -57,7 +57,7 @@ unique_ptr<DamarisPdiForwardingStrategyInterface> make_strategy(Damaris_cfg& con
 
 Damaris_pdi_sim_async_forwarder::Damaris_pdi_sim_async_forwarder(
     Damaris_cfg& damaris_cfg,
-    unique_ptr<Damaris_wrapper>& damaris_wrapper
+    std::unique_ptr<Damaris_wrapper>& damaris_wrapper
 )
     : m_config_ref(damaris_cfg),
       m_damaris_ref(damaris_wrapper),

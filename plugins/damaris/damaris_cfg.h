@@ -95,23 +95,30 @@ enum class Event_type {
 	DAMARIS_FINALIZE = 14
 };
 
-/** These default event names are for internal use. If a configured name is given, these ones will be surcharged */
-const std::unordered_map<Event_type, std::string> event_names
-	= {{Event_type::DAMARIS_INITIALIZE, "initialize"},
-       {Event_type::DAMARIS_START, "damaris_start"},
-       {Event_type::DAMARIS_SET_POSITION, "damaris_set_position"},
-       {Event_type::DAMARIS_SET_BLOCK_POSITION, "damaris_set_block_position"},
-       {Event_type::DAMARIS_WRITE, "damaris_write"},
-       {Event_type::DAMARIS_WRITE_BLOCK, "damaris_write_block"},
-       {Event_type::DAMARIS_CLIENT_COMM_GET, "damaris_client_comm_get"},
-       {Event_type::DAMARIS_PARAMETER_SET, "damaris_parameter_set"},
-       {Event_type::DAMARIS_PARAMETER_GET, "damaris_parameter_get"},
-       {Event_type::DAMARIS_END_ITERATION, "damaris_end_iteration"},
-       {Event_type::DAMARIS_GET_ITERATION, "damaris_get_iteration"},
-       {Event_type::DAMARIS_SIGNAL, "damaris_signal"},
-       {Event_type::DAMARIS_BIND, "damaris_bind"},
-       {Event_type::DAMARIS_STOP, "damaris_stop"},
-       {Event_type::DAMARIS_FINALIZE, "finalize"}};
+/** Map Event_type to its default event name string.
+ *  Returns a string literal (static storage duration, no destructor) so this is safe
+ *  to call from any destructor regardless of DSO finalization order. */
+inline const char* event_name_for(Event_type event_type)
+{
+    switch (event_type) {
+        case Event_type::DAMARIS_INITIALIZE:         return "initialize";
+        case Event_type::DAMARIS_START:              return "damaris_start";
+        case Event_type::DAMARIS_SET_POSITION:       return "damaris_set_position";
+        case Event_type::DAMARIS_SET_BLOCK_POSITION: return "damaris_set_block_position";
+        case Event_type::DAMARIS_WRITE:              return "damaris_write";
+        case Event_type::DAMARIS_WRITE_BLOCK:        return "damaris_write_block";
+        case Event_type::DAMARIS_CLIENT_COMM_GET:    return "damaris_client_comm_get";
+        case Event_type::DAMARIS_PARAMETER_SET:      return "damaris_parameter_set";
+        case Event_type::DAMARIS_PARAMETER_GET:      return "damaris_parameter_get";
+        case Event_type::DAMARIS_END_ITERATION:      return "damaris_end_iteration";
+        case Event_type::DAMARIS_GET_ITERATION:      return "damaris_get_iteration";
+        case Event_type::DAMARIS_SIGNAL:             return "damaris_signal";
+        case Event_type::DAMARIS_BIND:               return "damaris_bind";
+        case Event_type::DAMARIS_STOP:               return "damaris_stop";
+        case Event_type::DAMARIS_FINALIZE:           return "finalize";
+    }
+    throw std::out_of_range("unknown Event_type in event_name_for");
+}
 
 struct Dataset_Write_Info {
 	PDI::Expression when = "1"; //By default, always write as long as there are iteration going on
@@ -158,7 +165,7 @@ class Damaris_cfg
 	std::string m_finalize_on_event = "";
 
 
-	int m_arch_domains;
+	int m_arch_domains = 1;
 	int m_dc_cores_pernode;
 	int m_dc_nodes;
 
@@ -204,17 +211,6 @@ class Damaris_cfg
 	size_t m_pdi_generic_layout_size = 65536;//To be set to the max size of forwarded data
 	damaris::interoperability::pdi::ForwardingMode m_pdi_forwarding_mode;
 	std::string m_pdi_damaris_generic_channel = "";
-	std::string pdi_damaris_exchange_config = R"V0G0N("
-        <layout name="_PDI_DAMARIS_GENERIC_LAYOUT_" type="char" dimensions="_PDI_DAMARIS_GENERIC__LAYOUT_SIZE_" />
-        <variable name="_PDI_DAMARIS_GENERIC_CHANNEL_" layout="_PDI_DAMARIS_GENERIC_LAYOUT_" type="scalar" visualizable="false" />
-		)V0G0N";
-	std::string pdi_plugin_damaris_config = R"V0G0N("        
-        <plugin name="Pdi" datasets="_PDI_DAMARIS_GENERIC_CHANNEL_" data-dependency-mode="ALL_EXPOSED">
-            <pdi_cfg_yaml_path value="_PDI_CFG_YAML_PATH_" />
-            <forwarding_mode value="_FORWARDING_MODE_" />
-            <generic_channel value="_GENERIC_CHANNEL_" />
-        </plugin>
-		)V0G0N";
 
 	const std::string XML_CONFIG_TEMPLATE = R"V0G0N(<?xml version="1.0"?>
  <simulation name="_SIM_NAME_" language="c" xmlns="http://damaris.gforge.inria.fr/damaris/model">

@@ -61,8 +61,8 @@ bool load_event(std::unordered_map<std::string, Event_type>& events, PDI::Contex
 		ctx.logger().debug(
 			"Duplicate event name `{}' in `{}' (previously defined in `{}')",
 			result.first->first,
-			event_names.at(event_type),
-			event_names.at(result.first->second)
+			event_name_for(event_type),
+			event_name_for(result.first->second)
 		);
 	}
 	return result.second;
@@ -267,13 +267,13 @@ Damaris_cfg::Damaris_cfg(PDI::Context& ctx, PC_tree_t tree)
 			// returns the parsed tree, discarding the original path.
 			std::string pdi_yaml_path;
 			if (PDI::is_scalar(value)) {
-				pdi_yaml_path = to_string(value);
+				pdi_yaml_path = PDI::to_string(value);
 			}
     		parse_pdi_plugin_cfg_tree(ctx, resolve_config(value, ".pdi"), pdi_yaml_path);
 		}
 	});
 
-	std::string end_it_event_name = event_names.at(Event_type::DAMARIS_END_ITERATION);
+	std::string end_it_event_name = event_name_for(Event_type::DAMARIS_END_ITERATION);
 	//Add only if it does not exist yet
 	if (std::find(m_after_write_events.begin(), m_after_write_events.end(), end_it_event_name) == m_after_write_events.end()
 	    && m_end_iteration_on_event.empty())
@@ -331,7 +331,7 @@ void Damaris_cfg::parse_architecture_tree(PDI::Context& ctx, PC_tree_t arch_tree
 	find_replace_map.insert({{"_SIM_NAME_", sim_name}, {"_SHMEM_BUFFER_BYTES_REGEX_", std::to_string(buffer_size)}, {"_SHMEM_NAME_", buffer_name}});
 
 	//domains
-	int m_arch_domains = 1;
+	m_arch_domains = 1;
 	PC_tree_t domains_tree = PC_get(arch_tree, ".domains");
 	if (!PC_status(domains_tree)) {
 		m_arch_domains = PDI::to_long(domains_tree);
@@ -842,6 +842,11 @@ void Damaris_cfg::parse_pdi_plugin_cfg_tree(PDI::Context& ctx, PC_tree_t pdi_plu
 		vxml.store_       = "";
 		vxml.script_      = "";
 		vxml.select_mem_  = "";
+		// Keep one iteration of batch data alive so the server-side PdiPlugin
+		// can replay it in event_iteration_end before the GC reclaims it.
+		// Without this, the GC (also triggered on iteration_end but added first)
+		// clears the block at iteration N before PdiPlugin reads it.
+		vxml.iterations_window_ = 1;
 
 		std::map<std::string, std::string> var_replace_map
 			= {{"_DATASET_ELEMENT_REGEX_", vxml.ReturnXMLForVariable() + "\n_DATASET_ELEMENT_REGEX_"}};
@@ -1300,7 +1305,7 @@ PC_tree_t Damaris_cfg::resolve_config(PC_tree_t node, std::string section)
     // Scalar: pdi: "config.yaml"
 	if (PDI::is_scalar(node))
     {
-        std::string path = to_string(node);
+        std::string path = PDI::to_string(node);
         conf = PC_parse_path(path.c_str());
 
 		if(!section.empty()) {
