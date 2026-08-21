@@ -798,6 +798,11 @@ void Damaris_cfg::parse_pdi_plugin_cfg_tree(PDI::Context& ctx, PC_tree_t pdi_plu
 		m_pdi_forwarding_mode = parse_forwarding_mode(PDI::to_string(forwarding_mode));
 	}
 
+	PC_tree_t layout_size_node = PC_get(pdi_plugin_cfg_tree, ".layout_size");
+	if (!PC_status(layout_size_node)) {
+		m_pdi_generic_layout_size = static_cast<size_t>(PDI::to_long(layout_size_node));
+	}
+
 	// pdi_yaml_path extracted at call site before resolve_config discards the path string.
 	// Fall back to deprecated .yaml_path key in tree for backward compat.
 	std::string pdi_cfg_yaml_path = pdi_yaml_path;
@@ -805,6 +810,31 @@ void Damaris_cfg::parse_pdi_plugin_cfg_tree(PDI::Context& ctx, PC_tree_t pdi_plu
 		PC_tree_t yaml_path_tree = PC_get(pdi_plugin_cfg_tree, ".yaml_path");
 		if (!PC_status(yaml_path_tree)) {
 			pdi_cfg_yaml_path = PDI::to_string(yaml_path_tree);
+		}
+	}
+
+	// Scan the PDI YAML metadata section for descriptors of type "MPI_Comm".
+	// These are OS-local handles that cannot be meaningfully serialized over
+	// pdi_generic_channel; they are excluded from the forwarding batch on the
+	// client side via is_serializable_metadata().
+	m_non_serializable_metadata.clear();
+	if (!pdi_cfg_yaml_path.empty()) {
+		PC_tree_t full_yaml = PC_parse_path(pdi_cfg_yaml_path.c_str());
+		if (!PC_status(full_yaml)) {
+			PC_tree_t yaml_meta = PC_get(full_yaml, ".pdi.metadata");
+			if (!PC_status(yaml_meta)) {
+				int meta_len = PDI::len(yaml_meta);
+				for (int k = 0; k < meta_len; ++k) {
+					PC_tree_t key_node = PC_get(yaml_meta, "{%d}", k);
+					PC_tree_t val_node = PC_get(yaml_meta, "<%d>", k);
+					if (PC_status(key_node) || PC_status(val_node)) continue;
+					if (!PDI::is_scalar(val_node)) continue;
+					if (PDI::to_string(val_node) == "MPI_Comm") {
+						m_non_serializable_metadata.insert(PDI::to_string(key_node));
+					}
+				}
+			}
+			PC_tree_destroy(&full_yaml);
 		}
 	}
 
@@ -1358,6 +1388,11 @@ damaris::interoperability::pdi::ForwardingMode Damaris_cfg::get_pdi_forwarding_m
 std::string Damaris_cfg::get_generic_channel_name() const
 {
 	return m_pdi_damaris_generic_channel;
+}
+
+bool Damaris_cfg::is_serializable_metadata(const std::string& desc_name) const
+{
+	return m_non_serializable_metadata.find(desc_name) == m_non_serializable_metadata.end();
 }
 
 } // namespace damaris_pdi

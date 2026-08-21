@@ -108,10 +108,16 @@ public:
 				ctx.callbacks().add_event_callback([this](const std::string& name) { this->event(name); }, ev_name);
 		}
 
-		//data and event forwarding
-		for (auto&& desc: m_config.descs_to_forward()) { 
+		//data and event forwarding — only metadata descriptors go through pdi_generic_channel;
+		// data descriptors (is_metadata=false) are written to Damaris shared memory via
+		// damaris_write and read by the server directly from there.
+		// MPI_Comm handles are also excluded: they're OS-local integers that cannot be
+		// meaningfully serialized, and the server already ignores them.
+		for (auto&& desc: m_config.descs_to_forward()) {
+			if (!desc.second) continue; // skip data descriptors (is_metadata == false)
+			if (!m_config.is_serializable_metadata(desc.first)) continue; // skip MPI_Comm etc.
 			ctx.callbacks().add_data_callback([this, &ctx](const std::string& name, PDI::Ref ref) { m_sim_async_forwarder.forward_share(ctx, name, ref); }, desc.first);
-		
+
 			ctx.callbacks().add_data_remove_callback([this, &ctx](const std::string& name, PDI::Ref ref) {
 					m_sim_async_forwarder.forward_reclaim(ctx, name, ref);
 				}, desc.first

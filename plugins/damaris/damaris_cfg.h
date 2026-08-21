@@ -208,7 +208,8 @@ class Damaris_cfg
 	std::unordered_map<std::string, bool> m_pdi_plugin_descs; 
 	/// <configured_event_name> is used as customed event, configured in plugin config sections.
 	std::vector<std::string> m_pdi_plugin_configured_event_names;
-	size_t m_pdi_generic_layout_size = 65536;//To be set to the max size of forwarded data
+	size_t m_pdi_generic_layout_size = 65536; // configurable via <layout_size> in YAML
+	std::unordered_set<std::string> m_non_serializable_metadata; // MPI_Comm and other OS handles
 	damaris::interoperability::pdi::ForwardingMode m_pdi_forwarding_mode;
 	std::string m_pdi_damaris_generic_channel = "";
 
@@ -325,35 +326,15 @@ public:
     // ---------------------------------------------------------------
     int32_t get_arch_domains_count() const;
 
-    // ---------------------------------------------------------------
-    // TO ADD -- byte size of the pdi_generic_channel layout
-    // (e.g. <layout name="pdi_generic_layout" type="char" dimensions="65536"/>
-    //  => 65536, since type="char" means 1 byte per element)
-    // ---------------------------------------------------------------
     size_t get_generic_channel_layout_size() const;
 
-    // ---------------------------------------------------------------
-    // TO ADD -- reads <forwarding_mode value="batched|immediate"/> from
-    // the PDI plugin's XML section. Defaults to Batched if the parameter
-    // is absent (safe default: lower footprint on the global domains
-    // budget, matches the mode already validated first).
-    // ---------------------------------------------------------------
+    // Returns false for descriptor names that cannot be meaningfully serialized
+    // over pdi_generic_channel (e.g. MPI_Comm handles). Those are excluded from
+    // the forwarding batch on the client side.
+    bool is_serializable_metadata(const std::string& desc_name) const;
+
     damaris::interoperability::pdi::ForwardingMode get_pdi_forwarding_mode() const;
 
-	// ---------------------------------------------------------------------
-	// get_generic_channel_name()
-	//
-	// Reads <generic_channel_name value="..."/> from the PDI plugin's own
-	// XML section (same section as <pdi_cfg_yaml_path>, cf. PdiPlugin::parseXML
-	// for the exact DOM traversal pattern already used for that parameter).
-	// Falls back to kDefaultGenericChannelName if the parameter is absent, so
-	// existing configs that don't set it explicitly keep working unchanged.
-	//
-	// IMPORTANT: PdiPlugin's own equivalent accessor (server side) MUST parse
-	// this exact same XML parameter -- never hardcode "pdi_generic_channel"
-	// as a literal on either side, and never let the two sides drift apart
-	// by using two different default values.
-	// ---------------------------------------------------------------------
 	std::string get_generic_channel_name() const;
 }; // class Damaris_cfg
 
