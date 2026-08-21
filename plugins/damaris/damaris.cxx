@@ -102,10 +102,10 @@ public:
 		}
 
 		//Default event names, maight be called internally
-		for (auto&& ev_name: event_names) {
-			//Only if the key if not yet used by an event
-			if (m_config.events().find(ev_name.second) == m_config.events().end())
-				ctx.callbacks().add_event_callback([this](const std::string& name) { this->event(name); }, ev_name.second);
+		for (int i = 0; i <= static_cast<int>(Event_type::DAMARIS_FINALIZE); ++i) {
+			const char* ev_name = event_name_for(static_cast<Event_type>(i));
+			if (m_config.events().find(ev_name) == m_config.events().end())
+				ctx.callbacks().add_event_callback([this](const std::string& name) { this->event(name); }, ev_name);
 		}
 
 		//data and event forwarding
@@ -245,6 +245,11 @@ public:
 					datasets_to_write_count++;
 					//Wait until all datasets are written before launching end of iteration operations
 					if (m_config.is_there_after_write_events() && datasets_to_write_count == m_config.datasets_to_write().size()) {
+						// Flush the batch to pdi_generic_channel BEFORE calling damaris_end_iteration().
+						// damaris_end_iteration() advances the Damaris iteration counter, so flushing
+						// after it would store the batch at iteration N+1 while main_field is at N,
+						// causing the server-side PdiPlugin to replay misaligned metadata.
+						m_sim_async_forwarder.on_iteration_end();
 						std::list<std::string> after_write_events = m_config.get_after_write_events();
 						for (auto it = after_write_events.begin(); it != after_write_events.end(); it++) {
 							std::string aw_event = it->c_str();
@@ -256,7 +261,6 @@ public:
 							} else { //Non Damaris call event
 							}
 						}
-						m_sim_async_forwarder.on_iteration_end();
 						datasets_to_write_count = 0;
 					}
 				}
