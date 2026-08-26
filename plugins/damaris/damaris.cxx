@@ -187,10 +187,14 @@ public:
 
 					int32_t block = ds_write_info.block.to_long(context());
 					context().logger().debug("data `{}' will be written in block = '{}'", name, block);
-					int64_t position[3]
-						= {ds_write_info.position[0].to_long(context()),
-					       ds_write_info.position[1].to_long(context()),
-					       ds_write_info.position[2].to_long(context())};
+					// Damaris reads exactly as many entries as the dataset's layout has
+					// dimensions; unused trailing slots (kept at 0) are ignored. The
+					// buffer is sized to kMaxDatasetDims so N-D datasets (e.g. gysela's
+					// 6D distribution function) are handled, not only up to 3D.
+					int64_t position[kMaxDatasetDims];
+					for (int d = 0; d < kMaxDatasetDims; ++d) {
+						position[d] = ds_write_info.position[d].to_long(context());
+					}
 
 					const void* data = static_cast<const void*>(rref.get());
 

@@ -120,9 +120,17 @@ inline const char* event_name_for(Event_type event_type)
     throw std::out_of_range("unknown Event_type in event_name_for");
 }
 
+// Maximum number of dimensions supported for a Damaris dataset write position.
+// Damaris itself is N-dimensional; this only bounds the fixed-size position
+// buffer below. Gysela's 5D distribution function is exposed as a 6D array
+// (species x tor1 x tor2 x tor3 x vpar x mu), so 3 (the historical value) is
+// not enough. 8 leaves headroom while keeping the buffer stack-allocated.
+static constexpr int kMaxDatasetDims = 8;
+
 struct Dataset_Write_Info {
 	PDI::Expression when = "1"; //By default, always write as long as there are iteration going on
-	/*int64_t* */ PDI::Expression position[3] = {"0", "0", "0"}; //Max Dim is 3
+	/*int64_t* */ PDI::Expression position[kMaxDatasetDims]
+		= {"0", "0", "0", "0", "0", "0", "0", "0"}; //Max Dim is kMaxDatasetDims
 	/*int32_t */ PDI::Expression block = "0"; //when domain = 1, which is the default behaviour
 	std::string dataset_name;
 };
