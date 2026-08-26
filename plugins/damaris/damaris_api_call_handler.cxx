@@ -23,6 +23,9 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
+#include <cstdio>
+#include <cstdlib>
+
 #include <pdi/ref_any.h>
 #include "damaris_api_call_handler.h"
 #include "damaris_cfg.h"
@@ -156,7 +159,18 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			conf = NULL;
 
 			MPI_Finalize();
-			exit(0);
+			// Hard stop of the dedicated Damaris server rank. Everything that
+			// needs orderly teardown has already been finalized explicitly
+			// above (PDI_finalize / PC_tree_destroy / MPI_Finalize), so use
+			// std::_Exit rather than exit(): _Exit terminates immediately
+			// WITHOUT running C++ static/global destructors or atexit handlers.
+			// Those destructors would otherwise tear down PDI / Damaris / MPI
+			// library global state a second time (it was already finalized
+			// here), double-freeing an internal container — observed at process
+			// teardown as a double-free in a std::list destructor. Flush stdio
+			// first, since _Exit skips stream-buffer flushing.
+			std::fflush(nullptr);
+			std::_Exit(0);
 		}
 	}
 
