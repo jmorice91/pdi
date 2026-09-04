@@ -65,61 +65,62 @@ int main(int argc, char* argv[])
 
 	// check datasize if is correct
 	PC_int(PC_get(conf, ".datasize[0]"), &longval);
-	if (longval != size_with_ghost[0]) {
-		printf("Error datasize[0] must be: %d (program) != %d (yaml).", size_with_ghost[0], (int)longval);
-		exit(1);
-	}
+	size_with_ghost[0] = longval;
 
 	PC_int(PC_get(conf, ".datasize[1]"), &longval);
-	if (longval != size_with_ghost[1]) {
-		printf("Error datasize[1] must be: %d (program) != %d (yaml).", size_with_ghost[1], (int)longval);
-		exit(1);
-	}
+	size_with_ghost[1] = longval;
 
 	PC_int(PC_get(conf, ".datasize[2]"), &longval);
-	if (longval != size_with_ghost[2]) {
-		printf("Error datasize[2] must be: %d (program) != %d (yaml).", size_with_ghost[2], (int)longval);
-		exit(1);
-	}
+	size_with_ghost[2] = longval;
 
-	// check ghost left as the value must be given explicity in "layout/ghosts"
+	// read ghost left (Remark: the value must be given explicity in "layout/ghosts")
 	PC_int(PC_get(conf, ".ghost_left[0]"), &longval);
-	if (longval != ghost_left[0]) {
-		printf("Error ghost_left[0] must be: %d (program) != %d (yaml).", ghost_left[0], (int)longval);
-		exit(1);
-	}
+	ghost_left[0] = longval;
 
 	PC_int(PC_get(conf, ".ghost_left[1]"), &longval);
-	if (longval != ghost_left[1]) {
-		printf("Error ghost_left[1] must be: %d (program) != %d (yaml).", ghost_left[1], (int)longval);
-		exit(1);
-	}
+	ghost_left[1] = longval;
 
 	PC_int(PC_get(conf, ".ghost_left[2]"), &longval);
-	if (longval != ghost_left[2]) {
-		printf("Error ghost_left[2] must be: %d (program) != %d (yaml).", ghost_left[2], (int)longval);
-		exit(1);
-	}
+	ghost_left[2] = longval;
 
-	// check ghost_right as the value must be given explicity in "layout/ghosts"
+	// read ghost_right (Remark: the value must be given explicity in "layout/ghosts")
 	PC_int(PC_get(conf, ".ghost_right[0]"), &longval);
-	if (longval != ghost_right[0]) {
-		printf("Error ghost_right[0] must be: %d (program) != %d (yaml).", ghost_right[0], (int)longval);
-		exit(1);
-	}
+	ghost_right[0] = longval;
 
 	PC_int(PC_get(conf, ".ghost_right[1]"), &longval);
-	if (longval != ghost_right[1]) {
-		printf("Error ghost_right[1] must be: %d (program) != %d (yaml).", ghost_right[1], (int)longval);
-		exit(1);
-	}
+	ghost_right[1] = longval;
 
 	PC_int(PC_get(conf, ".ghost_right[2]"), &longval);
-	if (longval != ghost_right[2]) {
-		printf("Error ghost_right[2] must be: %d (program) != %d (yaml).", ghost_right[2], (int)longval);
+	ghost_right[2] = longval;
+
+	std::array<int, dim> expected_ghost_left  = {2, 1, 4};
+	std::array<int, dim> expected_ghost_right = {0, 3, 2};
+
+	// ghost values are checked as "layout.ghosts" doesn't support yet $expression in Damaris
+	if (ghost_left[0] != expected_ghost_left[0]) {
+		printf("Error ghost_left[0] must be: %d (yaml) != %d.", ghost_left[0], expected_ghost_left[0]);
+		exit(1);
+	} 
+	if (ghost_left[1] != expected_ghost_left[1]) {
+		printf("Error ghost_left[1] must be: %d (yaml) != %d.", ghost_left[1], expected_ghost_left[1]);
 		exit(1);
 	}
-
+	if (ghost_left[2] !=  expected_ghost_left[2]) {
+		printf("Error ghost_right[2] must be: %d (yaml) != %d.", ghost_left[2],  expected_ghost_left[2]);
+		exit(1);
+	}
+	if (ghost_right[0] !=  expected_ghost_right[0]) {
+		printf("Error ghost_right[0] must be: %d (yaml) != %d.", ghost_right[0],  expected_ghost_right[0]);
+		exit(1);
+	}
+	if (ghost_right[1] !=  expected_ghost_right[1]) {
+		printf("Error ghost_right[1] must be: %d (yaml) != %d.", ghost_right[1],  expected_ghost_right[1]);
+		exit(1);
+	}
+	if (ghost_right[2] !=  expected_ghost_right[2]) {
+		printf("Error ghost_right[2] must be: %d (yaml) != %d.", ghost_right[2],  expected_ghost_right[2]);
+		exit(1);
+	}
 
 	std::array<int, dim> global_size_no_ghost{};
 
