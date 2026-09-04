@@ -23,14 +23,6 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-// #include <gtest/gtest.h>
-// #include <filesystem>
-// #include <string>
-// #include <numeric>
-// #include <unistd.h>
-
-//#include <unistd.h>
-//#include <cstdlib>
 
 #include <filesystem>
 #include <numeric>
