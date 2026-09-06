@@ -24,8 +24,6 @@
  ******************************************************************************/
 
 #include <mpi.h>
-#include <vector>
-#include <assert.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <pdi.h>
@@ -63,13 +61,15 @@ int main(int argc, char* argv[])
 	PDI_expose("is_client", &is_client, PDI_INOUT); // The order doesn't care
 	PDI_expose("mpi_comm", &main_comm, PDI_INOUT); // <-- allow plugin to set, returns Damaris client comm
 
-	PDI_multi_expose("init_data", "frequency", &frequency, PDI_OUT, NULL);
-
-	printf("value of is_client %d=", is_client);
 	if (is_client) {
-		for (int ii = 0; ii < max_iter; ++ii) {
-			fprintf(stdout, "expose iter=%d \n", ii);
-			PDI_multi_expose("write", "iter", &ii, PDI_INOUT, NULL);
+		PDI_multi_expose("init_data", "frequency", &frequency, PDI_OUT, NULL);
+
+		printf("value of is_client %d=", is_client);
+		if (is_client) {
+			for (int ii = 0; ii < max_iter; ++ii) {
+				fprintf(stdout, "expose iter=%d \n", ii);
+				PDI_multi_expose("write", "iter", &ii, PDI_INOUT, NULL);
+			}
 		}
 	}
 
