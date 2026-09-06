@@ -122,3 +122,18 @@ target_link_libraries(damaris_read_multidimensional_data PDI::PDI_C GTest::gmock
 gtest_discover_tests(damaris_read_multidimensional_data PROPERTIES TIMEOUT 3)
 # end multidimensional data
 ##################################
+#########################
+# test for when condition
+configure_file(test_damaris_when_condition.yml test_damaris_when_condition.yml COPYONLY)
+
+add_executable(damaris_write_when_condition  test_write_damaris_when_condition.cxx)
+target_link_libraries(damaris_write_when_condition PDI::PDI_C MPI::MPI_CXX)
+target_compile_features(damaris_write_when_condition  PUBLIC cxx_std_17)
+
+add_executable(damaris_read_when_condition  test_read_damaris_when_condition.cxx)
+target_link_libraries(damaris_read_when_condition PDI::PDI_C  GTest::gmock GTest::gmock_main GTest::gtest)
+target_compile_features(damaris_read_when_condition  PUBLIC cxx_std_17)
+
+gtest_discover_tests(damaris_read_when_condition PROPERTY TIMEOUT 4)
+# end test for when condition
+#############################
