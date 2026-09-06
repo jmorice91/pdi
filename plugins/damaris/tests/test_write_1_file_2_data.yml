@@ -44,10 +44,10 @@ pdi:
       write: 
         int_values:
           dataset: int_values
-          position: ["$nn"]
+          position: ["0"]
         int22_values:
           dataset: int22_values
-          position: ["$nn"]
+          position: ["0"]
       log:
         rotation_size: 5
         log_level: info
