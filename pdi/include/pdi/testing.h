@@ -254,7 +254,9 @@ PdiTest::PdiTest()
 		std::string filename(16, '\0');
 		std::generate(filename.begin(), filename.end(), [&]() { return VALID_FILE_CHARS[random(random_generator)]; });
 		auto&& test_info = *::testing::UnitTest::GetInstance()->current_test_info();
-		return std::string("pdi_tst_dir.") + test_info.test_suite_name() + "." + test_info.name() + "." + filename;
+		auto&& test_name = std::string(test_info.test_suite_name()) + "." + test_info.name();
+		std::replace(test_name.begin(), test_name.end(), '/', '.'); // we need that in case for the class 'PdiTestParam'
+		return std::string("pdi_tst_dir.") + test_name + "." + filename;
 	}();
 	m_tmpdir = m_workdir / filename;
 	std::filesystem::create_directory(m_tmpdir);
@@ -288,6 +290,22 @@ inline PdiTest::~PdiTest()
 	std::filesystem::remove_all(m_tmpdir);
 }
 
+/** The fixture class for PDI plugins testing is equivalent to
+ *
+ * template <typename T>
+ * class [[nodiscard]] TestWithParam : public Test,
+ *                                    public WithParamInterface<T> {};
+ *
+ * where the inherit from ::testing::Test is replaced by PdiTest.
+ *
+ */
+// this is a header-only class because we don't want to depend on a given version of gtest/gmock
+
+template <typename T>
+class PdiTestParam
+	: public PdiTest
+	, public ::testing::WithParamInterface<T>
+{};
 
 } // namespace PDI
 
