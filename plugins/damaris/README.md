@@ -48,6 +48,7 @@ full potential of this plugin.
 * `write`: list of data that will be write on the disk by damaris. Each data is composed with
   * `dataset`: The dataset in which the data will be written.
   * `position`: The starting position of the data (for each client process) with repect to the dataset.
+  * `block`(integer, default: 0): Which local sub-domain of this client process the data belongs to, when `architecture/domains` is greater than 1 (i.e. a single client manages several sub-domains/patches itself). Must be between `0` and `domains - 1`. Can be left at its default when `domains = 1`.
 
 * `log`: a key value map that specifies the logger information of Damaris. This feature is optional.
   * `file_name`(string) The beginning of the log filename. By default is the value of damaris/architecture/sim_name and the default folder is "where_you_launch_the_script/log". The suffix of the filename is `_P#proc_#iter.log` where #proc represents the MPI rank of the Damaris server process. #iter is the number of iterations.

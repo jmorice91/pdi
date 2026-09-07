@@ -553,6 +553,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 		}
 
 		int err = m_damaris->damaris_pdi_stop();
+		m_stopped = true;
 	} else if (event_name == damaris_event_names.at(Event_type::DAMARIS_FINALIZE)) {
 		if (!m_damaris) {
 			//ctx.logger().error("Trying to call damaris_strop() before plugin initialization (`{}')", event_name);
@@ -561,7 +562,11 @@ void Damaris_api_call_handler::damaris_api_call_event(
 		}
 
 		try {
-			if (m_stop_on_event.empty() && m_damaris->get_is_client()) {
+			// Damaris requires damaris_stop() before damaris_finalize() (otherwise dedicated
+			// server ranks are left hung waiting in damaris_start()); auto-stop here whenever
+			// DAMARIS_STOP hasn't actually run yet, whether or not stop_on_event is configured -
+			// e.g. it may be configured but never fired if the simulation exits early.
+			if (!m_stopped && m_damaris->get_is_client()) {
 				//TODO: only one rank should display the info
 				ctx.logger().debug("Plugin sent damaris_stop() to Damaris, in finalization");
 
@@ -569,6 +574,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 				//PDI_status_t status = PDI_event(stop_event_name.c_str());
 
 				int stop_err = m_damaris->damaris_pdi_stop();
+				m_stopped = true;
 			}
 
 			int rank;

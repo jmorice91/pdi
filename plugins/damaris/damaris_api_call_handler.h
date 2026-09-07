@@ -51,9 +51,15 @@ class Damaris_api_call_handler
 	/// NOTE: set by the constructor but currently never read
 	std::string m_init_on_event = "";
 	std::string m_start_on_event = "";
+	/// NOTE: set by the constructor but currently never read - DAMARIS_FINALIZE's auto-stop
+	/// fallback now keys off m_stopped instead, regardless of whether this was configured.
 	std::string m_stop_on_event = "";
 	/// NOTE: never set by any constructor, never read - fully unused
 	std::string m_finalize_on_event = "";
+	/// True once DAMARIS_STOP has actually executed (whether triggered explicitly or by the
+	/// DAMARIS_FINALIZE auto-stop fallback) - lets DAMARIS_FINALIZE know whether it still needs
+	/// to stop the server itself, regardless of whether stop_on_event was configured.
+	bool m_stopped = false;
 
 public:
 	Damaris_api_call_handler(

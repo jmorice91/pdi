@@ -111,7 +111,10 @@ const std::unordered_map<Event_type, std::string> damaris_event_names
 struct Dataset_Write_Info {
 	PDI::Expression when = "1"; //By default, always write as long as there are iteration going on
 	/*int64_t* */ PDI::Expression position[3] = {"0", "0", "0"}; //Max Dim is 3
-	/*int32_t */ PDI::Expression block = "0"; //when domain = 1, which is the default behaviour
+	/*int32_t */ PDI::Expression block
+		= "0"; //Which local sub-domain of this client's data this write applies to (0-based, must be
+	           //  < architecture/domains); only meaningful when a client manages more than one
+	           //  sub-domain/patch itself. Always 0, and invisible to the user, when domains = 1 (the default).
 	std::string dataset_name;
 };
 

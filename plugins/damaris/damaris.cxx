@@ -177,6 +177,8 @@ public:
 				if (ds_write_info.when.to_long(context())) {
 					context().logger().debug("data `{}' will be written when = '{}'", name, ds_write_info.when.to_long(context()));
 
+					// Which of this client's local sub-domains `data` belongs to (see
+					// Dataset_Write_Info::block); only relevant when architecture/domains > 1.
 					int32_t block = ds_write_info.block.to_long(context());
 					context().logger().debug("data `{}' will be written in block = '{}'", name, block);
 					int64_t position[3]
@@ -338,7 +340,7 @@ public:
 	{
 		ensure_damaris_is_initialized(event_name);
 
-		//If it a sim configured event
+		//If it is a sim configured event
 		if (m_config.events().find(event_name) != m_config.events().end()) {
 			if (event_name == m_config.init_on_event()) {
 				std::string init_event_name = m_event_handler.get_event_name(Event_type::DAMARIS_INITIALIZE);
@@ -372,6 +374,11 @@ public:
 	 * guarantee Damaris is initialized before use. If an `init_on_event` is
 	 * configured, initialization is deferred to that event; using the plugin
 	 * beforehand is logged as an error.
+	 *
+	 * `init_on_event().empty()` is the intended, sufficient way to check
+	 * "no init_on_event configured" - it's not just an unset default that
+	 * happens to be empty, the YAML parser never sets it to anything else
+	 * when the key is absent.
 	 *
 	 * \param event_name name of the event currently being processed, or an
 	 *        empty string when called from damaris_awaited_data()
