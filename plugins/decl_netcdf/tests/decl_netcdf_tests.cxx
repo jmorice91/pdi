@@ -1117,7 +1117,7 @@ plugins:
 			testing::AllOf(
 				testing::HasSubstr("while triggering `read_data',"),
 				testing::HasSubstr("Decl_netcdf plugin: Datatype mismatch (with size): "
-                                   "read 'scalar_float' of size 4 for a buffer of size 8")
+	                               "read 'scalar_float' of size 4 for a buffer of size 8")
 			)
 		)
 	);
@@ -1167,7 +1167,7 @@ plugins:
 				testing::HasSubstr("while triggering `read_data',"),
 				testing::HasSubstr("can not read `scalar_float'"),
 				testing::HasSubstr("the type of the exposed data `var_out' is undefined (likely not "
-					"listed in (meta)data section of the specification tree).")
+	                               "listed in (meta)data section of the specification tree).")
 			)
 		)
 	);
