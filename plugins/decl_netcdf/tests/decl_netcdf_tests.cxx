@@ -24,8 +24,6 @@
  ******************************************************************************/
 
 #include <filesystem>
-#include <numeric>
-#include <ranges>
 
 #include <pdi/testing.h>
 
@@ -1119,7 +1117,7 @@ plugins:
 			testing::AllOf(
 				testing::HasSubstr("while triggering `read_data',"),
 				testing::HasSubstr("Decl_netcdf plugin: Datatype mismatch (with size): "
-	                               "read 'scalar_float' of size 4 for a buffer of size 8")
+                                   "read 'scalar_float' of size 4 for a buffer of size 8")
 			)
 		)
 	);
@@ -1167,10 +1165,9 @@ plugins:
 			testing::Eq(PDI_ERR_TYPE),
 			testing::AllOf(
 				testing::HasSubstr("while triggering `read_data',"),
-				testing::HasSubstr("Can not read `scalar_float' :"),
-				testing::HasSubstr("Invalid type in Decl_netcdf plugin:"),
-				testing::HasSubstr("The exposed data `var_out' "
-	                               "is not defined in yaml (meta)data section.")
+				testing::HasSubstr("can not read `scalar_float'"),
+				testing::HasSubstr("the type of the exposed data `var_out' is undefined (likely not "
+					"listed in (meta)data section of the specification tree).")
 			)
 		)
 	);
@@ -1218,10 +1215,9 @@ plugins:
 			testing::Eq(PDI_ERR_TYPE),
 			testing::AllOf(
 				testing::HasSubstr("while sharing `var_out'"),
-				testing::HasSubstr("Can not read `scalar_float'"),
-				testing::HasSubstr("Invalid type in Decl_netcdf plugin:"),
-				testing::HasSubstr("The exposed data `var_out' "
-	                               "is not defined in yaml (meta)data section.")
+				testing::HasSubstr("can not read `scalar_float'"),
+				testing::HasSubstr("the type of the exposed data `var_out' is undefined (likely not "
+	                               "listed in (meta)data section of the specification tree).")
 			)
 		)
 	);
@@ -1282,10 +1278,9 @@ plugins:
 			testing::Eq(PDI_ERR_TYPE),
 			testing::AllOf(
 				testing::HasSubstr("while triggering `read_data',"),
-				testing::HasSubstr("Can not read `nc_var'"),
-				testing::HasSubstr("Invalid type in Decl_netcdf plugin:"),
-				testing::HasSubstr("The exposed data `array_out' "
-	                               "is not defined in yaml (meta)data section.")
+				testing::HasSubstr("can not read `nc_var'"),
+				testing::HasSubstr("the type of the exposed data `array_out' is undefined (likely not "
+	                               "listed in (meta)data section of the specification tree).")
 			)
 		)
 	);
