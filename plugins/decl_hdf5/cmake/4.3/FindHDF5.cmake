@@ -329,6 +329,7 @@ endif()
 set(HDF5_FOUND OFF)
 set(HDF5_LIBRARIES)
 set(HDF5_HL_LIBRARIES)
+set(HDF5_FIND_QUIETLY OFF)
 
 # List of the valid HDF5 components
 set(HDF5_VALID_LANGUAGE_BINDINGS C CXX Fortran)
