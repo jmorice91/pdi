@@ -119,6 +119,7 @@ if("${BUILD_DECL_HDF5_PLUGIN}")
 		# Workaround missing "Prefer h5hl<LANG> compilers if HDF5_FIND_HL is enabled" in cmake pre-4.1
 		# Workaround for missing HDF5_IS_PARALLEL with HDF5-2.0.0+ in cmake pre-4.3
 		list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/plugins/decl_hdf5/cmake/4.3")
+		message(STATUS "Used cmake given by PDI to get decl_hdf5")
 	endif()
 endif()
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" CACHE STRING "" FORCE)
@@ -325,6 +326,7 @@ if("${BUILD_DECL_HDF5_PLUGIN}" OR "${BUILD_DECL_NETCDF_PLUGIN}")
 			-DHDF5_BUILD_EXAMPLES:BOOL=OFF
 			-DHDF5_BUILD_TOOLS:BOOL=ON
 			-DHDF5_BUILD_UTILS:BOOL=OFF
+			-DHDF5_FIND_DEBUG:BOOL=ON
 			"-DHDF5_INSTALL_BIN_DIR:STRING=${CMAKE_INSTALL_BINDIR}"
 			"-DHDF5_INSTALL_CMAKE_DIR:STRING=${CMAKE_INSTALL_DATADIR}/cmake/hdf5"
 			"-DHDF5_INSTALL_DATA_DIR:STRING=${CMAKE_INSTALL_DATADIR}/hdf5"
@@ -333,6 +335,7 @@ if("${BUILD_DECL_HDF5_PLUGIN}" OR "${BUILD_DECL_NETCDF_PLUGIN}")
 		VERSION
 	)
 	if("${HDF5_FOUND}")
+		message(STATUS "Value of HDF5_IS_PARALLEL=${HDF5_IS_PARALLEL}")
 		if("${HDF5_VERSION}" VERSION_LESS 1.10)
 			message(FATAL_ERROR "HDF5 version 1.10 at least required, HDF5 ${HDF5_VERSION} found.")
 		endif()
