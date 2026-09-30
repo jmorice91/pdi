@@ -677,7 +677,7 @@ endif()
 
 # Try to find HDF5 using an installed hdf5-config.cmake
 if(NOT HDF5_FOUND AND NOT HDF5_NO_FIND_PACKAGE_CONFIG_FILE)
-    find_package(HDF5 QUIET NO_MODULE
+    find_package(HDF5 NO_MODULE
       HINTS ${HDF5_ROOT}
       ${_HDF5_SEARCH_OPTS}
       )
