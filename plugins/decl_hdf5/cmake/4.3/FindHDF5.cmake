@@ -797,6 +797,7 @@ if(NOT HDF5_FOUND)
         HDF5_${_lang}_COMPILER_NO_INTERROGATE
         HDF5_${_lang}_VERSION
         HDF5_${_lang}_IS_PARALLEL)
+        message(STATUS "_HDF5_test_regular_compiler_C PARALLEL VERSION= ${HDF5_${_lang}_IS_PARALLEL}")
     elseif(_lang STREQUAL "CXX")
       set(_HDF5_TEST_SRC cmake_hdf5_test.cxx)
       _HDF5_test_regular_compiler_CXX(
@@ -842,9 +843,11 @@ if(NOT HDF5_FOUND)
       mark_as_advanced( HDF5_${_lang}_COMPILER_EXECUTABLE )
       unset(HDF5_${_lang}_COMPILER_NAMES)
 
+      message(STATUS "case HDF5_${_lang}_COMPILER_EXECUTABLE :: ${HDF5_${_lang}_COMPILER_EXECUTABLE}")
       if(HDF5_${_lang}_COMPILER_EXECUTABLE)
         _HDF5_invoke_compiler(${_lang} HDF5_${_lang}_COMPILE_LINE
           HDF5_${_lang}_RETURN_VALUE HDF5_${_lang}_VERSION HDF5_${_lang}_IS_PARALLEL)
+        message(STATUS "HDF5:  _HDF5_invoke_compiler for ${_lang} parallel = ${HDF5_${_lang}_IS_PARALLEL}" )
         if(HDF5_${_lang}_RETURN_VALUE EQUAL 0)
           if(HDF5_FIND_DEBUG)
             message(STATUS "HDF5: Using hdf5 compiler wrapper to determine ${_lang} configuration")
