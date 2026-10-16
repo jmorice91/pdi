@@ -78,6 +78,7 @@ option(BUILD_SHARED_LIBS        "Build shared libraries rather than static ones"
 option(BUILD_TIMER_PLUGIN       "Build Timer plugin" ON)
 option(BUILD_TRACE_PLUGIN       "Build Trace plugin" ON)
 option(BUILD_USER_CODE_PLUGIN   "Build User-code plugin" ON)
+option(BUILD_VELOC_PLUGIN   	"Build VeloC plugin" "${BUILD_UNSTABLE}")
 option(ENABLE_BENCHMARKING      "Activate benchmarks in the test suite" OFF)
 
 
@@ -540,6 +541,13 @@ sbuild_add_module(DAMARIS_PLUGIN
 	ENABLE_BUILD_FLAG BUILD_DAMARIS_PLUGIN
 	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/plugins/damaris"
 	DEPENDS PDI HDF5
+	SUBSTEPS test
+)
+
+sbuild_add_module(VELOC_PLUGIN
+	ENABLE_BUILD_FLAG BUILD_VELOC_PLUGIN
+	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/plugins/veloc"
+	DEPENDS PDI 
 	SUBSTEPS test
 )
 
