@@ -30,6 +30,7 @@
 #include <pdi/paraconf_wrapper.h>
 
 #include "damaris_pdi_event_discovery.h"
+#include "damaris_pdi_compat.h"
 
 namespace damaris_pdi {
 
@@ -166,7 +167,7 @@ Fwd_events_cfg parse_fwd_events(PC_tree_t node)
 		} else if (value == "all") {
 			cfg.mode = Fwd_events_cfg::Mode::All;
 		} else {
-			throw PDI::Spectree_error{node, "fwd_events: expected `auto', `all', a list of event names or {{auto, extra}}, got `{}'", value};
+			throw damaris_pdi::Config_error{node, "fwd_events: expected `auto', `all', a list of event names or {{auto, extra}}, got `{}'", value};
 		}
 	} else if (PDI::is_list(node)) {
 		cfg.mode = Fwd_events_cfg::Mode::List;
@@ -182,12 +183,12 @@ Fwd_events_cfg parse_fwd_events(PC_tree_t node)
 				} else if (flag == "false" || flag == "no" || flag == "0") {
 					use_auto = false;
 				} else {
-					throw PDI::Spectree_error{value, "fwd_events.auto: expected true or false, got `{}'", flag};
+					throw damaris_pdi::Config_error{value, "fwd_events.auto: expected true or false, got `{}'", flag};
 				}
 			} else if (key == "extra") {
 				cfg.extra = PDI::is_list(value) ? read_list(value) : std::vector<std::string>{PDI::to_string(value)};
 			} else {
-				throw PDI::Spectree_error{key_tree, "fwd_events: unknown key `{}' (expected `auto' or `extra')", key};
+				throw damaris_pdi::Config_error{key_tree, "fwd_events: unknown key `{}' (expected `auto' or `extra')", key};
 			}
 		});
 		cfg.mode = use_auto ? Fwd_events_cfg::Mode::Auto : Fwd_events_cfg::Mode::List;

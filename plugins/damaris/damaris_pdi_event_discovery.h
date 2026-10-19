@@ -54,7 +54,7 @@ struct Fwd_events_cfg {
 };
 
 /** Parses the `fwd_events:' node; an absent node means `auto'.
- * Throws PDI::Spectree_error on a malformed value. */
+ * Throws damaris_pdi::Config_error (cf. damaris_pdi_compat.h) on a malformed value. */
 Fwd_events_cfg parse_fwd_events(PC_tree_t node);
 
 /** Result of scanning the `plugins:' section of the server-side PDI config. */

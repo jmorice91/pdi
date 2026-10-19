@@ -38,6 +38,7 @@
 #include <pdi/ref_any.h>
 
 #include "damaris_cfg.h"
+#include "damaris_pdi_compat.h"
 #include "damaris_pdi_event_discovery.h"
 
 namespace damaris_pdi {
@@ -192,7 +193,7 @@ Damaris_cfg::Damaris_cfg(PDI::Context& ctx, PC_tree_t tree)
 		} else if (key == "communicator") {
 			// m_communicator = PDI::to_string(value);
 			// if (!m_communicator) {
-			// 	throw PDI::Spectree_error{key_tree, "no MPI communicator setted `{}'", key};
+			// 	throw damaris_pdi::Config_error{key_tree, "no MPI communicator setted `{}'", key};
 			// }
 		} else if (key == "init_on_event" || key == "on_init") {
 			m_init_on_event = PDI::to_string(value);
@@ -710,10 +711,10 @@ void Damaris_cfg::parse_storages_tree(PDI::Context& ctx, PC_tree_t storages_tree
 					// bool create_dir = creation_directory_c_only(ctx, store.store_opt_FilesPath_);
 					bool create_dir = creation_directory_cpp(store.store_opt_FilesPath_);
 					if (!create_dir) {
-						throw PDI::Spectree_error{storage_tree, "The key `{}' doesn't exist for a storage.", key};
+						throw damaris_pdi::Config_error{storage_tree, "The key `{}' doesn't exist for a storage.", key};
 					}
 				} else {
-					throw PDI::Spectree_error{storage_tree, "The key `{}' doesn't exist for a storage.", key};
+					throw damaris_pdi::Config_error{storage_tree, "The key `{}' doesn't exist for a storage.", key};
 				}
 			});
 			m_storages.emplace(store.store_name_, store);
@@ -744,7 +745,7 @@ void Damaris_cfg::parse_write_tree(PDI::Context& ctx, PC_tree_t write_tree_list)
 				//modelVarXML& value = it->second;
 			} else {
 				// Key does not exist
-				throw PDI::Spectree_error{write_tree_list, "Specified dataset `{}' to write into doesn't exist.", PDI::to_string(ds_name_tree)};
+				throw damaris_pdi::Config_error{write_tree_list, "Specified dataset `{}' to write into doesn't exist.", PDI::to_string(ds_name_tree)};
 			}
 		}
 		//when
@@ -759,7 +760,7 @@ void Damaris_cfg::parse_write_tree(PDI::Context& ctx, PC_tree_t write_tree_list)
 				int position_dim;
 				PC_len(ds_position_tree, &position_dim);
 				if (position_dim > kMaxDatasetDims) {
-					throw PDI::Spectree_error{
+					throw damaris_pdi::Config_error{
 						write_tree_list,
 						"Write.position has {} dimensions but at most {} are supported.",
 						position_dim,
@@ -772,7 +773,7 @@ void Damaris_cfg::parse_write_tree(PDI::Context& ctx, PC_tree_t write_tree_list)
 					pos_idx++;
 				});
 			} else {
-				throw PDI::Spectree_error{write_tree_list, "Write.position must be an array of 1 to kMaxDatasetDims values."};
+				throw damaris_pdi::Config_error{write_tree_list, "Write.position must be an array of 1 to kMaxDatasetDims values."};
 			}
 		}
 		//block
