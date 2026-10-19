@@ -123,11 +123,34 @@ public:
 				}, desc.first
 			);
 		}
-		for (auto&& event: m_config.events_to_forward()) {
-			ctx.callbacks().add_event_callback([this, &ctx](const std::string& name) { m_sim_async_forwarder.forward_event(ctx, name); }, event);
+		// Event forwarding (cf. `fwd_events:'). Damaris control events drive the
+		// client-side Damaris API and are never forwarded.
+		if (m_config.forward_all_events()) {
+			ctx.callbacks().add_event_callback([this, &ctx](const std::string& name) {
+				if (!is_damaris_control_event(name)) m_sim_async_forwarder.forward_event(ctx, name);
+			});
+		} else {
+			for (auto&& event: m_config.events_to_forward()) {
+				if (is_damaris_control_event(event)) {
+					ctx.logger().warn("fwd_events: `{}' is a Damaris control event and is not forwarded", event);
+					continue;
+				}
+				ctx.callbacks().add_event_callback([this, &ctx](const std::string& name) { m_sim_async_forwarder.forward_event(ctx, name); }, event);
+			}
 		}
 
 		ctx.logger().info("Plugin loaded successfully");
+	}
+
+	/// Events consumed by this plugin to call the Damaris API (configured
+	/// init/start/end-iteration/finalize events and the built-in API-call names).
+	bool is_damaris_control_event(const std::string& name)
+	{
+		if (m_config.events().count(name)) return true;
+		for (int i = 0; i <= static_cast<int>(Event_type::DAMARIS_FINALIZE); ++i) {
+			if (name == event_name_for(static_cast<Event_type>(i))) return true;
+		}
+		return m_event_handler.is_damaris_api_call_event(name);
 	}
 
 	void data(const std::string& name, PDI::Ref ref)

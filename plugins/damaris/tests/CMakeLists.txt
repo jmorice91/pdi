@@ -103,3 +103,9 @@ add_executable(test_read_simple_array_int test_read_simple_array_int.cxx)
 target_link_libraries(test_read_simple_array_int PDI::PDI_C GTest::gmock GTest::gmock_main GTest::gtest GTest::gtest_main)
 gtest_discover_tests(test_read_simple_array_int PROPERTIES TIMEOUT 3)
 
+
+## plugin <-> event settings (fwd_events) -- pure config parsing, no MPI/Damaris
+add_executable(test_event_discovery test_event_discovery.cxx ../damaris_pdi_event_discovery.cxx)
+target_link_libraries(test_event_discovery PDI::PDI_plugins GTest::gtest GTest::gtest_main)
+target_compile_features(test_event_discovery PUBLIC cxx_std_17)
+gtest_discover_tests(test_event_discovery PROPERTIES TIMEOUT 10)

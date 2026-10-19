@@ -143,23 +143,6 @@ struct DamarisXMLGenerators {
 	damaris::model::DamarisStoreXML store_; // Contains the extra elements that need to be part of a Damaris <store> (for HDF5 file w/r)
 };
 
-//CONST for PDI plugin of Damaris
-struct PDI_Common_Event_Names {
-    static constexpr const char* ON_INITIALIZE  = "on_initialize";
-    static constexpr const char* ON_EVENT       = "on_event";
-	//...
-    static constexpr const char* ON_FINALIZE    = "on_finalize";
-};
-
-// std::unordered_map<std::string, std::vector<std::string>> m_plugins_custom_events =
-// {
-//     { PDI_Common_Event_Names::ON_INITIALIZE, {} },
-//     { PDI_Common_Event_Names::ON_EVENT,      { "decl_hdf5", "user_code" } },
-// 	//...
-//     { PDI_Common_Event_Names::ON_FINALIZE,   {}                         },
-// };
-extern std::unordered_map<std::string, std::vector<std::string>> m_plugins_custom_events;
-
 
 class Damaris_cfg
 {
@@ -214,8 +197,10 @@ class Damaris_cfg
 	//PDI plugin of Damaris
 	/// <desc_name, is_metadata>
 	std::unordered_map<std::string, bool> m_pdi_plugin_descs; 
-	/// <configured_event_name> is used as customed event, configured in plugin config sections.
+	/// Events forwarded to the server (cf. `fwd_events:'); unused when m_fwd_all_events is set.
 	std::vector<std::string> m_pdi_plugin_configured_event_names;
+	/// `fwd_events: all': forward every event except Damaris control events.
+	bool m_fwd_all_events = false;
 	size_t m_pdi_generic_layout_size = 65536; // configurable via <layout_size> in YAML
 	std::unordered_set<std::string> m_non_serializable_metadata; // MPI_Comm and other OS handles
 	damaris::interoperability::pdi::ForwardingMode m_pdi_forwarding_mode;
@@ -291,6 +276,7 @@ public:
 	const std::unordered_map<std::string, Event_type>& events() const;
 	const std::unordered_map<std::string, bool> descs_to_forward() const;
 	const std::vector<std::string>& events_to_forward() const;
+	bool forward_all_events() const { return m_fwd_all_events; }
 	const std::unordered_map<std::string, Dataset_Write_Info>& datasets_to_write() const;
 	const std::unordered_map<std::string, std::pair<std::string, Desc_type>>& parameter_to_update() const;
 

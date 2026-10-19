@@ -38,6 +38,7 @@
 #include <pdi/ref_any.h>
 
 #include "damaris_cfg.h"
+#include "damaris_pdi_event_discovery.h"
 
 namespace damaris_pdi {
 
@@ -914,24 +915,28 @@ void Damaris_cfg::parse_pdi_plugin_cfg_tree(PDI::Context& ctx, PC_tree_t pdi_plu
 	}
 
 	PC_tree_t plugins = PC_get(pdi_plugin_cfg_tree, ".plugins");
-	if (!PC_status(plugins)) {
-		int nb_plugins = 0;
-		PC_len(plugins, &nb_plugins);
-		for (int i = 0; i < nb_plugins; i++) {
-			char* plugin_name = nullptr;
-			PC_string(PC_get(plugins, "{%d}", i), &plugin_name);
-			PC_tree_t plugin_cfg = PC_get(plugins, "<%d>", i);
-			for (const auto& [event_key, _] : m_plugins_custom_events) {
-				PC_tree_t event_node = PC_get(plugin_cfg, ".%s", event_key.c_str());
-				if (!PC_status(event_node)) {
-					m_pdi_plugin_configured_event_names.push_back(event_key);
-				}
-			}
-			free(plugin_name);
-		}
-		ctx.logger().info("Loaded {} configured events", m_pdi_plugin_configured_event_names.size());
-	} else {
+	if (PC_status(plugins)) {
 		ctx.logger().warn("plugins is not defined in specification tree");
+	}
+
+	// Events to forward to the server (cf. damaris_pdi_event_discovery.h).
+	Fwd_events_cfg fwd_events = parse_fwd_events(PC_get(pdi_plugin_cfg_tree, ".fwd_events"));
+	m_fwd_all_events = (fwd_events.mode == Fwd_events_cfg::Mode::All);
+	std::set<std::string> forwarded(fwd_events.extra.begin(), fwd_events.extra.end());
+	if (fwd_events.mode == Fwd_events_cfg::Mode::Auto) {
+		Discovered_events discovered = discover_plugin_events(plugins);
+		forwarded.insert(discovered.names.begin(), discovered.names.end());
+		for (const auto& warning: discovered.warnings) ctx.logger().warn("fwd_events: {}", warning);
+		for (const auto& note: discovered.notes) ctx.logger().info("fwd_events: {}", note);
+	}
+	m_pdi_plugin_configured_event_names.assign(forwarded.begin(), forwarded.end());
+
+	if (m_fwd_all_events) {
+		ctx.logger().info("fwd_events: forwarding all events (except Damaris control events)");
+	} else {
+		std::string list;
+		for (const auto& name: m_pdi_plugin_configured_event_names) list += (list.empty() ? "" : ", ") + name;
+		ctx.logger().info("fwd_events: forwarding {} event(s): {}", m_pdi_plugin_configured_event_names.size(), list.empty() ? "(none)" : list);
 	}
 }
 
@@ -1371,13 +1376,6 @@ const std::vector<std::string>& Damaris_cfg::events_to_forward() const
 
 std::string Damaris_cfg::m_is_client_dataset_name = "";
 std::string Damaris_cfg::m_client_comm_get_dataset_name = "";
-std::unordered_map<std::string, std::vector<std::string>> m_plugins_custom_events =
-{
-    { PDI_Common_Event_Names::ON_INITIALIZE, {} },
-    { PDI_Common_Event_Names::ON_EVENT,      { "decl_hdf5", "user_code" } },
-	//...
-    { PDI_Common_Event_Names::ON_FINALIZE,   {}                         },
-};
 
 int32_t Damaris_cfg::get_arch_domains_count() const
 {
