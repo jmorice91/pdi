@@ -55,6 +55,12 @@ full potential of this plugin.
   * `log_level`(string): level of the logger. The value is one of: trace, debug, info, warning, error and fatal
   * `flush`(true or false): Forces the log file to be flushed if set to true .
 
+* `pdi` (optional): path of a PDI configuration run **on the Damaris server** (asynchronous PDI, cf. section below). Its `pdi:` subtree is a regular PDI configuration (`metadata`, `data`, `plugins`) plus the forwarding keys:
+  * `fwd_mode` (`batched` or `immediate`, default `batched`): how operations are written to the forwarding channel (one block per iteration, or one block per operation).
+  * `layout_size` (integer, default 65536): size in bytes of one forwarding-channel block.
+  * `fwd_channel_name` (string, default `pdi_generic_channel`): name of the Damaris variable used as forwarding channel.
+  * `fwd_events`: which simulation events are forwarded to the server, cf. below. Default `auto`.
+
 **Question: what is the other type for a storage ( hdf5, ...)**
 
 * the keyword `when:` can be used in `write` to define the frequency?
@@ -62,6 +68,49 @@ full potential of this plugin.
 * In decl_hdf5 plugin in some sense, layout and write can be "fusioné"?
 
 All this points can be adressed in a new version in damaris plugin.
+
+## Asynchronous PDI on the Damaris server (`pdi:` key)
+
+With a `pdi:` key, the Damaris server runs its own PDI instance with that configuration (e.g. `decl_hdf5`, VeloC, `pycall`), fed with what the simulation exposes. The server-side Damaris plugin (`PdiPlugin`, in the Damaris repository) replays, for each client and each iteration, the PDI operations in the order the simulation issued them:
+
+* metadata listed in the server configuration: their value travels in a forwarding channel (`pdi_generic_channel`, generated automatically);
+* data listed in the server configuration `data:`: the array travels through the Damaris dataset of the same name (`datasets`/`layouts`/`write` above); only a marker recording when it was shared goes through the channel;
+* events selected by `fwd_events`;
+* data reclaims (so an event fired by `PDI_multi_expose` sees the shared data).
+
+`MPI_Comm` metadata is never forwarded: the server shares its own communicator.
+
+The Damaris iteration ends once every dataset written in the iteration has been reclaimed, so a whole `PDI_multi_expose` transaction (shares, event, reclaims) is replayed together.
+
+### `fwd_events`
+
+Forwarding an event that no server plugin waits for has no effect, so by default only the events awaited by the server plugins are forwarded:
+
+```yaml
+fwd_events: auto                          # default
+# fwd_events: all                         # every event except Damaris control events
+# fwd_events: [newiter, main_loop]        # explicit list
+# fwd_events: { auto: true, extra: [ev] } # auto + additions (auto: false = extra only)
+```
+
+`auto` reads the server configuration with a per-plugin table (`damaris_pdi_event_discovery.cxx`):
+
+| Server plugin | Event names read from |
+|---|---|
+| `decl_hdf5`, `decl_netcdf` | file-level `on_event` (name or list) |
+| `pycall`, `set_value` | keys of `on_event` |
+| `user_code` | keys of `on_event` (map, or list of one-key maps) |
+| `timer` | `start` / `stop` of each timer |
+| `veloc` | `managed_checkpointing.{checkpoint,recover,synchronize}_on`, `custom_checkpointing.custom_{checkpoint,recover}.{start,end,route_file}_on` |
+| `mpi`, `serialize`, `json` | none |
+| `trace` | listens to every event but does not widen the set (a note is logged) |
+| other plugins | `on_event` only, with a warning: add missing events with `extra` |
+
+Damaris control events (the configured init/start/end-iteration/finalize events and the Damaris API-call events) are never forwarded. The forwarded set is logged at startup, e.g. `fwd_events: forwarding 1 event(s): newiter`.
+
+In `batched` mode an event costs a few bytes in a block written anyway; in `immediate` mode every forwarded event and data marker uses one Damaris block, bounded by `architecture/domains`. Events fired after the last iteration has ended are not replayed.
+
+The table is unit-tested by `tests/test_event_discovery` (no MPI/Damaris needed).
 
 ## How to use the Damaris plugin with a simulation?
 
