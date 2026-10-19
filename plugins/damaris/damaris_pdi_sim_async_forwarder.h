@@ -54,6 +54,9 @@ public:
 
     void forward_share(PDI::Context& ctx, const std::string& desc_name, PDI::Ref ref);
     void forward_reclaim(PDI::Context& ctx, const std::string& desc_name, PDI::Ref ref);
+    // Share of a PDI `data:' descriptor: a marker without payload. The data itself
+    // goes through its Damaris dataset; the marker keeps its place in the sequence.
+    void forward_data_share(PDI::Context& ctx, const std::string& desc_name);
     void forward_event(PDI::Context& ctx, const std::string& event_name);
 
 	// To be called from DamarisPlugin's iteration_end hook

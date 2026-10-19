@@ -67,6 +67,8 @@ class damaris_plugin: public PDI::Plugin
 
 	int iteration = 0; //for debugging
 	int datasets_to_write_count = 0; //The number of data already written in the current iteration
+	bool m_iteration_complete = false; //All datasets of the iteration have been written
+	std::unordered_set<std::string> m_written_awaiting_reclaim; //Written datasets not yet reclaimed
 
 public:
 	static std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>> dependencies()
@@ -113,14 +115,35 @@ public:
 		// damaris_write and read by the server directly from there.
 		// MPI_Comm handles are also excluded: they're OS-local integers that cannot be
 		// meaningfully serialized, and the server already ignores them.
+		// Data descriptors are forwarded as payload-less markers so the server can
+		// replay their share/reclaim at the right place among the events.
+		std::unordered_set<std::string> forwarded_data;
 		for (auto&& desc: m_config.descs_to_forward()) {
-			if (!desc.second) continue; // skip data descriptors (is_metadata == false)
+			if (!desc.second) { // data descriptor (is_metadata == false)
+				forwarded_data.insert(desc.first);
+				ctx.callbacks().add_data_callback([this, &ctx](const std::string& name, PDI::Ref) { m_sim_async_forwarder.forward_data_share(ctx, name); }, desc.first);
+				continue;
+			}
 			if (!m_config.is_serializable_metadata(desc.first)) continue; // skip MPI_Comm etc.
 			ctx.callbacks().add_data_callback([this, &ctx](const std::string& name, PDI::Ref ref) { m_sim_async_forwarder.forward_share(ctx, name, ref); }, desc.first);
 
 			ctx.callbacks().add_data_remove_callback([this, &ctx](const std::string& name, PDI::Ref ref) {
 					m_sim_async_forwarder.forward_reclaim(ctx, name, ref);
 				}, desc.first
+			);
+		}
+
+		// One remove callback per data descriptor that is forwarded and/or written to
+		// Damaris: forward its reclaim first, then possibly end the iteration, so the
+		// reclaim lands in this iteration's batch.
+		std::unordered_set<std::string> reclaim_watched = forwarded_data;
+		for (auto&& ds: m_config.datasets_to_write()) reclaim_watched.insert(ds.first);
+		for (auto&& name: reclaim_watched) {
+			const bool forwarded = forwarded_data.count(name) > 0;
+			ctx.callbacks().add_data_remove_callback([this, &ctx, forwarded](const std::string& name, PDI::Ref ref) {
+					if (forwarded) m_sim_async_forwarder.forward_reclaim(ctx, name, ref);
+					dataset_reclaimed(name);
+				}, name
 			);
 		}
 		// Event forwarding (cf. `fwd_events:'). Damaris control events drive the
@@ -140,6 +163,26 @@ public:
 		}
 
 		ctx.logger().info("Plugin loaded successfully");
+	}
+
+	/// Ends the Damaris iteration once all datasets of the iteration have been
+	/// written AND reclaimed: the forwarded batch then holds the whole transaction
+	/// (shares, event, reclaims), and is flushed BEFORE damaris_end_iteration()
+	/// advances the iteration counter, so it is stored at the same iteration as
+	/// the datasets.
+	void dataset_reclaimed(const std::string& name)
+	{
+		m_written_awaiting_reclaim.erase(name);
+		if (!m_iteration_complete || !m_written_awaiting_reclaim.empty()) return;
+		m_iteration_complete = false;
+
+		m_sim_async_forwarder.on_iteration_end();
+		for (const std::string& aw_event: m_config.get_after_write_events()) {
+			if (m_event_handler.is_damaris_api_call_event(aw_event)) {
+				context().logger().debug("event `{}' has been triggered", aw_event);
+				m_event_handler.damaris_api_call_event(context(), m_damaris, aw_event, {});
+			}
+		}
 	}
 
 	/// Events consumed by this plugin to call the Damaris API (configured
@@ -276,24 +319,14 @@ public:
 					}
 
 					datasets_to_write_count++;
+					m_written_awaiting_reclaim.insert(name);
 					//Wait until all datasets are written before launching end of iteration operations
 					if (m_config.is_there_after_write_events() && datasets_to_write_count == m_config.datasets_to_write().size()) {
-						// Flush the batch to pdi_generic_channel BEFORE calling damaris_end_iteration().
-						// damaris_end_iteration() advances the Damaris iteration counter, so flushing
-						// after it would store the batch at iteration N+1 while main_field is at N,
-						// causing the server-side PdiPlugin to replay misaligned metadata.
-						m_sim_async_forwarder.on_iteration_end();
-						std::list<std::string> after_write_events = m_config.get_after_write_events();
-						for (auto it = after_write_events.begin(); it != after_write_events.end(); it++) {
-							std::string aw_event = it->c_str();
-							if (m_event_handler.is_damaris_api_call_event(aw_event)) {
-								context().logger().debug("event `{}' has been triggered", aw_event);
-
-								context().logger().debug("is_damaris_api_call_event ( `{}' ) = TRUE", aw_event);
-								m_event_handler.damaris_api_call_event(context(), m_damaris, aw_event, {});
-							} else { //Non Damaris call event
-							}
-						}
+						// The iteration ends once these datasets are reclaimed (see
+						// dataset_reclaimed), not now: in PDI_multi_expose the event
+						// (e.g. newiter) fires after the data is shared and before it
+						// is reclaimed, and must be forwarded in this iteration's batch.
+						m_iteration_complete = true;
 						datasets_to_write_count = 0;
 					}
 				}

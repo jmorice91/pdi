@@ -73,6 +73,12 @@ void Damaris_pdi_sim_async_forwarder::forward_share(PDI::Context& ctx, const std
     m_strategy->forward_share(desc_name, PDI::Ref_r{ref}.get(), ref.type()->buffersize());
 }
 
+void Damaris_pdi_sim_async_forwarder::forward_data_share(PDI::Context& ctx, const std::string& desc_name)
+{
+    if (!m_damaris_ref) return;
+    ctx.logger().info("=>>   data marker forwarded asynchronously to Damaris (payload in Damaris dataset): {}", desc_name);
+    m_strategy->forward_share(desc_name, nullptr, 0);
+}
 void Damaris_pdi_sim_async_forwarder::forward_reclaim(PDI::Context& ctx, const std::string& desc_name, PDI::Ref ref)
 {
     if (!m_damaris_ref) return;
