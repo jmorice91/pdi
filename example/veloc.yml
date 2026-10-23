@@ -5,19 +5,24 @@
 # state after the failure and continue the simulation's execution.
 
 # duration in seconds
-duration: 5
+duration: 10
 # global [height, width] (excluding boundary conditions or ghosts)
 datasize: [420, 60]
 # degree of parallelism
 parallelism: { height: 3, width: 1 }
 # status for checkpoint 
 veloc_checkpoint_status : 1 
+# temp threshold to interrupt the simulation 
+temp_threshold : 410
 
 pdi:
   include:
   - pdi.yml
-  data: 
+  metadata:
     veloc_checkpoint_status : int
+    stop : int 
+    temp_threshold : double
+  data: 
     elapsed_offset : double
   plugins:
     veloc:
@@ -29,4 +34,13 @@ pdi:
         protect_data: [iter, main_field,elapsed_offset] # data to be checkpointed or recovered, iter must be included
         synchronize_on_event: newiter # PDI_event to check status and consequently checkpoint/recover
         when : '$iter % 1000 = 0'
+    user_code:
+      on_event:
+        newiter:
+          when: '$iter%50=0'
+          check_temperature:
+            field: $main_field
+            dsize: $dsize
+            threshold: $temp_threshold   
+            stop: $stop
 
