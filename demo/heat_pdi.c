@@ -56,10 +56,13 @@ void check_temperature(void)
 	int* dsize;
 	double* threshold;
 	int* stop;
+	MPI_Comm *main_comm;
+
 	PDI_access("field", (void**)&field, PDI_IN);
 	PDI_access("dsize", (void**)&dsize, PDI_IN);
 	PDI_access("threshold", (void**)&threshold, PDI_IN);
 	PDI_access("stop", (void**)&stop, PDI_OUT);
+	PDI_access("mpi_comm", (void**)&main_comm, PDI_IN);
 
 	/* smallest temperature over the interior cells (ghosts excluded) */
 	double local_min = INFINITY;
@@ -70,7 +73,7 @@ void check_temperature(void)
 		}
 	}
 	double global_min;
-	MPI_Allreduce(&local_min, &global_min, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+	MPI_Allreduce(&local_min, &global_min, 1, MPI_DOUBLE, MPI_MIN, *main_comm);
 
 	*stop = (global_min >= *threshold);
 
@@ -78,6 +81,7 @@ void check_temperature(void)
 	PDI_release("dsize");
 	PDI_release("threshold");
 	PDI_release("stop");
+	PDI_release("mpi_comm");
 }
 
 static void init(int dsize[2], int pcoord[2], double dat[dsize[0]][dsize[1]])
@@ -193,120 +197,120 @@ int main(int argc, char* argv[])
 
 	if (is_client) {
 
-	int psize_1d, pcoord_1d;
-	MPI_Comm_size(main_comm, &psize_1d);
-	MPI_Comm_rank(main_comm, &pcoord_1d);
+		int psize_1d, pcoord_1d;
+		MPI_Comm_size(main_comm, &psize_1d);
+		MPI_Comm_rank(main_comm, &pcoord_1d);
 
-	PDI_expose("mpi_rank", &pcoord_1d, PDI_OUT);
-	PDI_expose("mpi_size", &psize_1d, PDI_OUT);
-	PDI_event("init");
+		PDI_expose("mpi_rank", &pcoord_1d, PDI_OUT);
+		PDI_expose("mpi_size", &psize_1d, PDI_OUT);
+		PDI_event("init");
 
-	/* application parameters */
-	long longval;
-	int dsize[2], psize[2];
-	double duration;
+		/* application parameters */
+		long longval;
+		int dsize[2], psize[2];
+		double duration;
 
-	PC_int(PC_get(conf, ".datasize[0]"), &longval);
-	dsize[0] = longval;
-	PC_int(PC_get(conf, ".datasize[1]"), &longval);
-	dsize[1] = longval;
-	PC_int(PC_get(conf, ".parallelism.height"), &longval);
-	psize[0] = longval;
-	PC_int(PC_get(conf, ".parallelism.width"), &longval);
-	psize[1] = longval;
-	PC_double(PC_get(conf, ".duration"), &duration);
+		PC_int(PC_get(conf, ".datasize[0]"), &longval);
+		dsize[0] = longval;
+		PC_int(PC_get(conf, ".datasize[1]"), &longval);
+		dsize[1] = longval;
+		PC_int(PC_get(conf, ".parallelism.height"), &longval);
+		psize[0] = longval;
+		PC_int(PC_get(conf, ".parallelism.width"), &longval);
+		psize[1] = longval;
+		PC_double(PC_get(conf, ".duration"), &duration);
 
 
-	/* local sizes, ghost cells included */
-	assert(dsize[0] % psize[0] == 0);
-	dsize[0] = dsize[0] / psize[0] + 2;
-	assert(dsize[1] % psize[1] == 0);
-	dsize[1] = dsize[1] / psize[1] + 2;
-	assert(psize[1] * psize[0] == psize_1d);
+		/* local sizes, ghost cells included */
+		assert(dsize[0] % psize[0] == 0);
+		dsize[0] = dsize[0] / psize[0] + 2;
+		assert(dsize[1] % psize[1] == 0);
+		dsize[1] = dsize[1] / psize[1] + 2;
+		assert(psize[1] * psize[0] == psize_1d);
 
-	int cart_period[2] = {0, 0};
-	MPI_Comm cart_com;
-	MPI_Cart_create(main_comm, 2, psize, cart_period, 1, &cart_com);
-	int pcoord[2];
-	MPI_Cart_coords(cart_com, pcoord_1d, 2, pcoord);
+		int cart_period[2] = {0, 0};
+		MPI_Comm cart_com;
+		MPI_Cart_create(main_comm, 2, psize, cart_period, 1, &cart_com);
+		int pcoord[2];
+		MPI_Cart_coords(cart_com, pcoord_1d, 2, pcoord);
 
-	int ii = 0;
-	PDI_expose("iter", &ii, PDI_OUT);
-	PDI_expose("dsize", dsize, PDI_OUT);
-	PDI_expose("psize", psize, PDI_OUT);
-	PDI_expose("pcoord", pcoord, PDI_OUT);
+		int ii = 0;
+		PDI_expose("iter", &ii, PDI_OUT);
+		PDI_expose("dsize", dsize, PDI_OUT);
+		PDI_expose("psize", psize, PDI_OUT);
+		PDI_expose("pcoord", pcoord, PDI_OUT);
 
-	double(*cur)[dsize[1]] = malloc(sizeof(double) * dsize[1] * dsize[0]);
-	double(*next)[dsize[1]] = malloc(sizeof(double) * dsize[1] * dsize[0]);
+		double(*cur)[dsize[1]] = malloc(sizeof(double) * dsize[1] * dsize[0]);
+		double(*next)[dsize[1]] = malloc(sizeof(double) * dsize[1] * dsize[0]);
 
-	init(dsize, pcoord, cur);
+		init(dsize, pcoord, cur);
 
-	double elapsed_offset = 0.0;
-	int first_iter = 1;
+		double elapsed_offset = 0.0;
+		int first_iter = 1;
 
-	PDI_expose("veloc_checkpoint_status", &veloc_checkpoint_status, PDI_OUT);
+		PDI_expose("veloc_checkpoint_status", &veloc_checkpoint_status, PDI_OUT);
 
-	double start = MPI_Wtime();
-	int next_reduce = 0;
-	int stop = 0;
+		double start = MPI_Wtime();
+		int next_reduce = 0;
+		int stop = 0;
 
-	PDI_event("main_loop");
-	for (ii = 0;; ++ii) {
-		elapsed_offset = MPI_Wtime() - start;
+		PDI_event("main_loop");
+		for (ii = 0;; ++ii) {
+			elapsed_offset = MPI_Wtime() - start;
 
-		/* on restart, the VeloC plugin overwrites these with checkpointed values */
-		PDI_multi_expose(
-			"newiter",
-			"iter", &ii, PDI_INOUT,
-			"main_field", cur, PDI_INOUT,
-			"elapsed_offset", &elapsed_offset, PDI_INOUT,
-			"stop", &stop, PDI_INOUT,
-			"temp_threshold", &temp_threshold, PDI_INOUT,
-			NULL
-		);
+			/* on restart, the VeloC plugin overwrites these with checkpointed values */
+			PDI_multi_expose(
+				"newiter",
+				"iter", &ii, PDI_INOUT,
+				"main_field", cur, PDI_INOUT,
+				"elapsed_offset", &elapsed_offset, PDI_INOUT,
+				"stop", &stop, PDI_INOUT,
+				"temp_threshold", &temp_threshold, PDI_INOUT,
+				NULL
+			);
 
-		// printf(" iter = %d\n", ii);
+			printf(" iter = %d\n", ii);
 
-		if (first_iter) {
-			start = MPI_Wtime() - elapsed_offset;
-			first_iter = 0;
-		}
-
-		iter(dsize, cur, next);
-		exchange(cart_com, dsize, next);
-		double(*tmp)[dsize[1]] = cur;
-		cur = next;
-		next = tmp;
-
-		if (stop) {
-			double local_time, global_time;
-			local_time = MPI_Wtime() - start;
-			MPI_Allreduce(&local_time, &global_time, 1, MPI_DOUBLE, MPI_MAX, main_comm);
-			double global_min = global_min_temperature(main_comm, dsize, cur);
-
-			if (0 == pcoord_1d) {
-				printf("iter=%7d; time=%7.3f; temperature=%7.3f, TEMPERATURE THRESHOLD REACHED!!!\n", ii, global_time, global_min);
+			if (first_iter) {
+				start = MPI_Wtime() - elapsed_offset;
+				first_iter = 0;
 			}
-			break;
-		}
 
-		if (ii >= next_reduce) {
-			double local_time, global_time;
-			local_time = MPI_Wtime() - start;
-			MPI_Allreduce(&local_time, &global_time, 1, MPI_DOUBLE, MPI_MAX, main_comm);
-			if (global_time >= duration) {
+			iter(dsize, cur, next);
+			exchange(cart_com, dsize, next);
+			double(*tmp)[dsize[1]] = cur;
+			cur = next;
+			next = tmp;
+
+			if (stop) {
+				double local_time, global_time;
+				local_time = MPI_Wtime() - start;
+				MPI_Allreduce(&local_time, &global_time, 1, MPI_DOUBLE, MPI_MAX, main_comm);
 				double global_min = global_min_temperature(main_comm, dsize, cur);
+
 				if (0 == pcoord_1d) {
-					printf("iter=%7d; time=%7.3f; temperature=%7.3f; END OF SIMULATION!\n", ii, global_time, global_min);
+					printf("iter=%7d; time=%7.3f; temperature=%7.3f, TEMPERATURE THRESHOLD REACHED!!!\n", ii, global_time, global_min);
 				}
 				break;
 			}
-			int rem_iter = .9 * (duration - global_time) * (ii + 1) / (global_time + 0.1);
-			if (rem_iter < 1) rem_iter = 1;
-			next_reduce = ii + rem_iter;
-			if (0 == pcoord_1d) printf("iter=%7d; time=%7.3f; next_reduce=%7d\n", ii, global_time, next_reduce);
+
+			if (ii >= next_reduce) {
+				double local_time, global_time;
+				local_time = MPI_Wtime() - start;
+				MPI_Allreduce(&local_time, &global_time, 1, MPI_DOUBLE, MPI_MAX, main_comm);
+				if (global_time >= duration) {
+					double global_min = global_min_temperature(main_comm, dsize, cur);
+					if (0 == pcoord_1d) {
+						printf("iter=%7d; time=%7.3f; temperature=%7.3f; END OF SIMULATION!\n", ii, global_time, global_min);
+					}
+					break;
+				}
+				int rem_iter = .9 * (duration - global_time) * (ii + 1) / (global_time + 0.1);
+				if (rem_iter < 1) rem_iter = 1;
+				next_reduce = ii + rem_iter;
+				if (0 == pcoord_1d) printf("iter=%7d; time=%7.3f; next_reduce=%7d\n", ii, global_time, next_reduce);
+			}
 		}
-	}
 		PDI_event("finalization");
 		PDI_expose("iter", &ii, PDI_OUT);
 		PDI_expose("main_field", cur, PDI_OUT);

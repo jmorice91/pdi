@@ -23,12 +23,12 @@ pdi:
     veloc_checkpoint_status : int
     stop : int 
     temp_threshold : double
+    mpi_comm: MPI_Comm
   data: # type of values for which PDI does not keep a copy
     elapsed_offset : double
-    mpi_comm: MPI_Comm
     is_client: int
   logging:
-    level: debug
+    level: trace
   plugins:
     veloc:
       config_file: veloc_example.cfg # needed for VeloC internal config 
@@ -48,6 +48,7 @@ pdi:
             dsize: $dsize
             threshold: $temp_threshold   
             stop: $stop
+            client_comm: $mpi_comm
     mpi:
     damaris:
       architecture: 
