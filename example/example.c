@@ -37,41 +37,6 @@
 
 #include "pdi.h"
 
-void check_temperature(void)
-{
-	double* field;
-	int* dsize;
-	double* threshold;
-	int* stop;
-	PDI_access("field", (void**)&field, PDI_IN); // write main_field in field
-	PDI_access("dsize", (void**)&dsize, PDI_IN);
-	PDI_access("threshold", (void**)&threshold, PDI_IN);
-	PDI_access("stop", (void**)&stop, PDI_OUT);
- 
-	/* smallest temperature over the interior cells (ghosts excluded) */
-	double local_min = INFINITY;
-	for (int yy = 1; yy < dsize[0] - 1; ++yy) {
-		for (int xx = 1; xx < dsize[1] - 1; ++xx) {
-			double val = field[yy * dsize[1] + xx];
-			if (val < local_min) local_min = val;
-		}
-	}
-	double global_min;
-	MPI_Allreduce(&local_min, &global_min, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
- 
-	int rank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	/* temporary: used to calibrate the threshold, remove once it is chosen */
-	// if (0 == rank) printf("check_temperature: global_min=%g threshold=%g\n", global_min, *threshold);
- 
-	*stop = (global_min >= *threshold);
- 
-	PDI_release("field");
-	PDI_release("dsize");
-	PDI_release("threshold");
-	PDI_release("stop");
-}
-
 void init(int dsize[2], int pcoord[2], double dat[dsize[0]][dsize[1]])
 {
 	for (int yy = 0; yy < dsize[0]; ++yy) {
@@ -209,7 +174,6 @@ int main(int argc, char* argv[])
 
 	int psize_1d;
 	long veloc_checkpoint_status;
-	double temp_threshold; 
 	MPI_Comm_size(main_comm, &psize_1d);
 	int pcoord_1d;
 	MPI_Comm_rank(main_comm, &pcoord_1d);
@@ -250,16 +214,6 @@ int main(int argc, char* argv[])
 		veloc_checkpoint_status = 1;
 	}
 
-	PC_errhandler(PC_NULL_HANDLER);
-	PC_tree_t threshold_tree = PC_get(conf, ".temp_threshold");
-	PC_errhandler(old_handler);
-
-	if (!PC_status(threshold_tree)) {
-		PC_double(threshold_tree, &temp_threshold);
-	} else {
-		temp_threshold= 0; 
-	}
-
 #else
 	dsize[0] = 8;
 	dsize[1] = 8 * psize_1d;
@@ -270,7 +224,6 @@ int main(int argc, char* argv[])
 
 	double duration = 0.1;
 	veloc_checkpoint_status = 1;
-	temp_threshold= -1;
 #endif
 
 	// get local & add ghosts to sizes
@@ -305,16 +258,12 @@ int main(int argc, char* argv[])
 
 	double start = MPI_Wtime();
 	int next_reduce = 0;
-	int stop =0; 
 
 	PDI_event("main_loop");
 	for (ii = 0;; ++ii) {
 		elapsed_offset = MPI_Wtime() - start;
 
-		PDI_multi_expose("newiter", "iter", &ii, PDI_INOUT, "main_field", cur, PDI_INOUT,  
-			"elapsed_offset", &elapsed_offset,  PDI_INOUT, "stop", &stop, PDI_INOUT, 
-			"temp_threshold", &temp_threshold, PDI_INOUT, NULL);
-		
+		PDI_multi_expose("newiter", "iter", &ii, PDI_INOUT, "main_field", cur, PDI_INOUT, "elapsed_offset", &elapsed_offset, PDI_INOUT, NULL);
 
 		if (first_iter) {
 			start = MPI_Wtime() - elapsed_offset;
@@ -327,39 +276,12 @@ int main(int argc, char* argv[])
 		cur = next;
 		next = tmp;
 
-		if (stop) {
-			double local_time, global_time;
-			local_time = MPI_Wtime() - start;
-			MPI_Allreduce(&local_time, &global_time, 1, MPI_DOUBLE, MPI_MAX, main_comm);
-
-			double local_min = INFINITY;
-			for (int yy = 1; yy < dsize[0] - 1; ++yy) {
-				for (int xx = 1; xx < dsize[1] - 1; ++xx) {
-					if (cur[yy][xx] < local_min) local_min = cur[yy][xx];
-				}
-			}
-			double global_min;
-			MPI_Allreduce(&local_min, &global_min, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-
-			if (0 == pcoord_1d) printf("iter=%7d; time=%7.3f; temperature=%7.3f, TEMPERATURE THRESHOLD REACHED!!!\n", ii, global_time, global_min);
-			break;
-		}
-
 		if (ii >= next_reduce) {
 			double local_time, global_time;
 			local_time = MPI_Wtime() - start;
 			MPI_Allreduce(&local_time, &global_time, 1, MPI_DOUBLE, MPI_MAX, main_comm);
 			if (global_time >= duration) {
-				double local_min = INFINITY;
-				for (int yy = 1; yy < dsize[0] - 1; ++yy) {
-					for (int xx = 1; xx < dsize[1] - 1; ++xx) {
-						if (cur[yy][xx] < local_min) local_min = cur[yy][xx];
-					}
-				}
-				double global_min;
-				MPI_Allreduce(&local_min, &global_min, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-
-				if (0 == pcoord_1d) printf("iter=%7d; time=%7.3f; END OF SIMULATION!\n", ii, global_time, global_min);
+				if (0 == pcoord_1d) printf("iter=%7d; time=%7.3f; STOP!!!\n", ii, global_time);
 				break;
 			}
 			int rem_iter = .9 * (duration - global_time) * (ii + 1) / (global_time + 0.1);

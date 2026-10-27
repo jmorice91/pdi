@@ -1,0 +1,92 @@
+# The example executable ran with this yaml is meant to simulate a scenario  
+# where the simulation state is restored from a checkpoint after a failure. 
+# After, the simulation continues to run for (duration - elapsed_time) seconds
+# where duration is the intended duration of the simulation, and elapsed_time
+# is the amount of seconds the simulation ran before failing. 
+
+# duration in seconds
+duration: 10
+# global [height, width] (excluding boundary conditions or ghosts)
+datasize: [420, 60]
+# degree of parallelism
+parallelism: { height: 3, width: 1 }
+# status for recovery 
+veloc_checkpoint_status : 0 
+# temp threshold to interrupt the simulation 
+temp_threshold : 700
+
+
+pdi:
+  include:
+  - pdi.yml
+  metadata:
+    veloc_checkpoint_status : int
+    stop : int 
+    temp_threshold : double
+  data: # type of values for which PDI does not keep a copy
+    elapsed_offset : double
+    mpi_comm: MPI_Comm
+    is_client: int
+  logging:
+    level: debug
+  plugins:
+    veloc:
+      config_file: veloc_example.cfg # needed for VeloC internal config 
+      checkpoint_label : example # needed by VeloC to checkpoint-recover 
+      iteration : iter # needed by VeloC to checkpoint 
+      status : veloc_checkpoint_status  
+      managed_checkpointing:
+        protect_data: [iter, main_field,elapsed_offset] # data to be checkpointed or recovered, iter must be included
+        synchronize_on_event: newiter # PDI_event to check status and consequently checkpoint/recover
+        when : '$iter % 1000 = 0'
+    user_code:
+      on_event:
+        newiter:
+          when: '$iter%50=0'
+          check_temperature:
+            field: $main_field
+            dsize: $dsize
+            threshold: $temp_threshold   
+            stop: $stop
+    mpi:
+    damaris:
+      architecture: 
+        sim_name: example  
+        domains: 1
+        dedicated:
+          core: 1
+          node: 0 
+      client_comm_get: mpi_comm # Needed to return the Damaris client comm
+      get_is_client: is_client #Needed only when is_client is used
+      datasets:
+        - dataset: 
+            name: main_field
+            layout: main_field_layout
+            storage: hdf5_example
+      layouts:
+        - layout: 
+            name: main_field_layout
+            type: double
+            global: ['$psize[0]*($dsize[0]-2)', '$psize[1]*($dsize[1]-2)']
+            dimensions: [ '$dsize[0]', '$dsize[1]' ] # process dim, with ghosts/boundaries
+            ghosts: '1:1,1:1'
+            depends_on: [dsize, psize] # This will help ensure an update of the layout attributes value to Damaris lib once the metadata are exposed (using Damaris Parameters in the background)!
+      storages:
+        - storage:
+            name: hdf5_example
+            type: HDF5
+            file_mode: Collective       # or FilePerCore
+            files_path: ./HDF5_files_with_is_client/   # Where to save files
+          
+      write: 
+        main_field: # the name of the data to write, if dataset not specified afterward! ~meme notion de dataset hdf5
+          dataset: main_field 
+          when : '$iter % 1000 = 0'   # do only write the every 1000 iterations, Default at every iteration.
+          position: ['($dsize[0]-2)*$pcoord[0]', '($dsize[1]-2)*$pcoord[1]'] # ~start de dataset_selection par iteration
+
+      log:
+        file_name: example_with_is_client 
+        rotation_size: 5
+        log_level: info
+        flush: true
+

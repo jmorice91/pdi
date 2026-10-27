@@ -1,6 +1,8 @@
 #=============================================================================
 # Copyright (C) 2015-2026 Commissariat a l'energie atomique et aux energies alternatives (CEA)
+# Copyright (C) 2026 Centre National de la Recherche Scientifique (CNRS)
 # Copyright (C) 2020 Institute of Bioorganic Chemistry Polish Academy of Science (PSNC)
+# Copyright (C) 2026 Julien Bigot <julien@julien-bigot.fr>
 #
 # All rights reserved.
 #
@@ -32,7 +34,7 @@ cmake_minimum_required(VERSION 3.22...4.2)
 project(pdi_examples LANGUAGES C)
 
 set(MPI_COMPONENTS C)
-set(paraconf_COMPONENTS C)
+set(PARACONF_COMPONENTS C)
 set(PDI_COMPONENTS C)
 
 option(BUILD_DECL_HDF5_PLUGIN   "Build Decl'HDF5 plug-in"    OFF)
@@ -47,7 +49,7 @@ option(DISABLE_PDI              "Disable the use of both PDI and Paraconf in the
 if("${BUILD_FORTRAN}")
 	enable_language(Fortran)
 	list(APPEND MPI_COMPONENTS Fortran)
-	list(APPEND PARACONF_COMPONENTS "f90")
+	list(APPEND PARACONF_COMPONENTS f90)
 	list(APPEND PDI_COMPONENTS f90)
 endif()
 
@@ -63,7 +65,7 @@ if("${DISABLE_PDI}")
 	set(PDI_MOCK_PARACONF_TARGET TRUE)
 	add_subdirectory(../mock_pdi mock_pdi)
 else()
-	find_package(paraconf REQUIRED COMPONENTS ${paraconf_COMPONENTS})
+	find_package(paraconf REQUIRED COMPONENTS ${PARACONF_COMPONENTS})
 	find_package(PDI REQUIRED COMPONENTS ${PDI_COMPONENTS})
 endif()
 find_library(LIB_M m DOC "The math library")
@@ -95,7 +97,6 @@ endif()
 
 add_executable(PDI_example_C example.c)
 target_link_libraries(PDI_example_C PRIVATE PDI::PDI_C paraconf::paraconf MPI::MPI_C m)
-set_target_properties(PDI_example_C PROPERTIES ENABLE_EXPORTS TRUE)
 
 
 if("${BUILD_FORTRAN}")
@@ -138,8 +139,7 @@ set_tests_properties(PDI_example_veloc PROPERTIES
 	PROCESSORS 3
 	WORKING_DIRECTORY "${VELOC_EXAMPLE_WORKDIR}")
 
-add_test(NAME PDI_example_veloc_recovery COMMAND 
-	sh "${CMAKE_CURRENT_SOURCE_DIR}/cmake/veloc_clean_dir.sh"
+add_test(NAME PDI_example_veloc_recovery COMMAND
 	"${MPIEXEC}" "${MPIEXEC_NUMPROC_FLAG}" 3 ${MPIEXEC_PREFLAGS}
 	"$<TARGET_FILE:PDI_example_C>" ${MPIEXEC_POSTFLAGS}
 	"${CMAKE_CURRENT_SOURCE_DIR}/veloc_recovery.yml")
