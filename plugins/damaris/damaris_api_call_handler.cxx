@@ -141,22 +141,33 @@ void Damaris_api_call_handler::damaris_api_call_event(
 				PDI_release(Damaris_cfg::client_comm_get_dataset_name().c_str());
 			}
 
-			// Get the pointer of PC_tree_t as a (void*)
-			uintptr_t* conf;
-			PDI_access("conf_yaml", (void**)&conf, PDI_IN);
-			PDI_release("conf_yaml");
-
-			// Get the pointer of PC_tree_t as is object type (need to be done before PDI_finalize)
-			uintptr_t cc_conf = *conf;
-			PC_tree_t* vv_conf = reinterpret_cast<PC_tree_t*>(cc_conf);
+			// The simulation's configuration tree, if it exposed it as `conf_yaml'
+			// (a PC_tree_t* passed as uintptr_t), is destroyed after PDI_finalize.
+			// It is optional: an application that does not expose it (e.g. gysela)
+			// must still reach the hard stop below. Otherwise the server returned
+			// into the application, exited normally, and the exit-time destructor
+			// of PDI's global context re-entered damaris_finalize() after Damaris's
+			// own globals were gone: a segfault on the server rank, while the
+			// clients waited for it in MPI_Finalize (the "teardown hang").
+			PC_tree_t* vv_conf = nullptr;
+			{
+				PDI_errhandler_t previous_handler = PDI_errhandler(PDI_NULL_HANDLER);
+				uintptr_t* conf = nullptr;
+				if (PDI_access("conf_yaml", (void**)&conf, PDI_IN) == PDI_OK) {
+					vv_conf = reinterpret_cast<PC_tree_t*>(*conf); // read before PDI_finalize
+					PDI_release("conf_yaml");
+				} else {
+					ctx.logger().debug("Damaris server: `conf_yaml' not exposed, skipping PC_tree_destroy");
+				}
+				PDI_errhandler(previous_handler);
+			}
 
 			PDI_finalize();
 
-			if (PC_tree_destroy(vv_conf)) {
+			if (vv_conf && PC_tree_destroy(vv_conf)) {
 				printf("Damaris server: Error in PC_tree_destroy\n");
 			}
-			vv_conf = NULL;
-			conf = NULL;
+			vv_conf = nullptr;
 
 			MPI_Finalize();
 			// Hard stop of the dedicated Damaris server rank. Everything that
