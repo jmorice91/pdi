@@ -22,14 +22,17 @@ pdi:
     veloc_checkpoint_status : int
     stop : int 
     temp_threshold : double
+    mpi_comm: MPI_Comm
   data: 
     elapsed_offset : double
   plugins:
+    mpi:
     veloc:
       config_file: veloc_example.cfg # needed for VeloC internal config 
       checkpoint_label : example # needed by VeloC to name checkpoint files 
       iteration : iter # needed by VeloC to name checkpoint files 
       status : veloc_checkpoint_status 
+      communicator: mpi_comm
       managed_checkpointing:
         protect_data: [iter, main_field,elapsed_offset] # data to be checkpointed or recovered, iter must be included
         synchronize_on_event: newiter # PDI_event to check status and consequently checkpoint/recover

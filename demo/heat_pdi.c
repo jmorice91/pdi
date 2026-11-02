@@ -269,8 +269,6 @@ int main(int argc, char* argv[])
 				NULL
 			);
 
-			printf(" iter = %d\n", ii);
-
 			if (first_iter) {
 				start = MPI_Wtime() - elapsed_offset;
 				first_iter = 0;
