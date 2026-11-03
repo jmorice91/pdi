@@ -85,6 +85,7 @@ install(TARGETS pdi_damaris_plugin
 # Tests
 if("${BUILD_TESTING}")
 	add_subdirectory(tests/)
+    add_subdirectory(tests_false/)
 endif()
 
 if("${DAMARIS_BUILD_EXAMPLES}")
