@@ -100,6 +100,9 @@ public:
 			ctx.callbacks().add_event_callback([this](const std::string& name) { this->damaris_event(name); }, event.first);
 		}
 
+
+		// Comment: Not sure to be added the default one is a good idea? 
+
 		//Default event names, maight be called internally
 		for (auto&& ev_name: damaris_event_names) {
 			//Only if the key if not yet used by an event
@@ -125,6 +128,9 @@ public:
 	void damaris_awaited_data(const std::string& name, PDI::Ref ref)
 	{
 		ensure_damaris_is_initialized("");
+
+		// Comment: How to be sure that a dataname doesn't verify multiple condition?
+		// Test une metadata qui depend d'un autre metadata !!
 
 		//Update damaris parameters, which depend on PDI metadatas
 		if (m_config.is_needed_metadata(name)) {
@@ -231,6 +237,7 @@ public:
 							position
 						);
 
+						// comment: What is the Damaris write mean ? == server write in HDF5 
 						std::string write_event_name = m_event_handler.get_event_name(Event_type::DAMARIS_WRITE);
 						m_event_handler.damaris_api_call_event(
 							context(),
@@ -242,12 +249,19 @@ public:
 						);
 					}
 
+					// comment: doesn't work as expected, 
+					// example: var1, var2, var3 data to write
+					// PDI_expose('var1' , , )
+					// PDI_expose('var1' , , )
+					// PDI_expose('var1' , , ) ==> end iteration inside ( var2 et var3 ne fonctionnent pas)
+					// 
 					datasets_to_write_count++;
-					//Wait until all datasets are written before launching end of iteration operations
+					// comment: 
+					// Wait until all datasets are written before launching end of iteration operations
 					if (m_config.is_there_after_write_events() && datasets_to_write_count == m_config.datasets_to_write().size()) {
 						std::list<std::string> after_write_events = m_config.get_after_write_events();
 						for (auto it = after_write_events.begin(); it != after_write_events.end(); it++) {
-							std::string aw_event = it->c_str();
+							std::string aw_event = it->c_str(); // comment: aw=after_write
 							if (m_event_handler.is_damaris_api_call_event(aw_event)) {
 								context().logger().debug("event `{}' has been triggered", aw_event);
 
@@ -336,6 +350,9 @@ public:
 	 *
 	 * \param event_name name of the PDI event that was triggered
 	 */
+
+	// comment: never used in the test or in the example?
+	// case event name is "" (need to investigate)
 	void damaris_event(const std::string& event_name)
 	{
 		ensure_damaris_is_initialized(event_name);
@@ -383,12 +400,15 @@ public:
 	 * \param event_name name of the event currently being processed, or an
 	 *        empty string when called from damaris_awaited_data()
 	 */
+
+	// comment: call on every data_waited or event to be sure that damaris is initialized (not optimal)
 	void ensure_damaris_is_initialized(const std::string& event_name)
 	{
 		if (!m_damaris) {
 			if (m_config.events().find(event_name) != m_config.events().end()) {
 				//Means the first action received by the plugin wasn't fir initialization...
 				if (!m_config.init_on_event().empty() && event_name != m_config.init_on_event()) {
+					// comment: no need to add pretty_name
 					context().logger().error("Trying to use {} plugin before the initialization of the Damaris library!", pretty_name());
 				} else if (event_name == m_config.init_on_event())
 					return; //The init will follows

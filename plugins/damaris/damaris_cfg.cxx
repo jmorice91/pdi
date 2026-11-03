@@ -101,6 +101,7 @@ bool creation_directory_cpp(const std::string& dir_name)
 	return false;
 }
 
+// comment: Not used ==> delete
 /// @brief
 /// @param dir_name
 /// @return true if the directory is created or exists
@@ -203,19 +204,21 @@ Damaris_cfg::Damaris_cfg(PDI::Context& ctx, PC_tree_t tree)
 			// if (!m_communicator) {
 			// 	throw PDI::Spectree_error{key_tree, "no MPI communicator setted `{}'", key};
 			// }
-		} else if (key == "init_on_event" || key == "on_init") {
+		// comment: Why two keys?
+		} else if (key == "init_on_event" || key == "on_init") { // comment: No test with this keyword
 			m_init_on_event = PDI::to_string(value);
 			load_event(m_events, ctx, m_init_on_event, Event_type::DAMARIS_INITIALIZE);
-		} else if (key == "finalize_on_event" || key == "on_finalize") {
+		// comment: Why two keys?
+		} else if (key == "finalize_on_event" || key == "on_finalize") { // comment: No test with this keyword
 			m_finalize_on_event = PDI::to_string(value);
 			load_event(m_events, ctx, m_finalize_on_event, Event_type::DAMARIS_FINALIZE);
-		} else if (key == "start_on_event") {
+		} else if (key == "start_on_event") { // comment: No test with this keyword
 			m_start_on_event = PDI::to_string(value);
 			load_event(m_events, ctx, m_start_on_event, Event_type::DAMARIS_START);
-		} else if (key == "stop_on_event") {
+		} else if (key == "stop_on_event") { // comment: No test with this keyword
 			m_stop_on_event = PDI::to_string(value);
 			load_event(m_events, ctx, m_stop_on_event, Event_type::DAMARIS_STOP);
-		} else if (key == "end_iteration_on_event") {
+		} else if (key == "end_iteration_on_event") { // comment: No test with this keyword
 			m_end_iteration_on_event = PDI::to_string(value);
 			load_event(m_events, ctx, m_end_iteration_on_event, Event_type::DAMARIS_END_ITERATION);
 		} else if (key == "parameters") {
@@ -233,16 +236,19 @@ Damaris_cfg::Damaris_cfg(PDI::Context& ctx, PC_tree_t tree)
 			parse_write_tree(ctx, value);
 		}
 
+		// comment: No test with this keyword
 		else if (key == "parameter_get")
 		{
 			parse_parameter_to_update_tree(ctx, value, Desc_type::PRM_TO_GET);
 		}
 
+		// comment: No test with this keyword
 		else if (key == "parameter_set")
 		{
 			parse_parameter_to_update_tree(ctx, value, Desc_type::PRM_TO_SET);
 		}
 
+		// comment: What is the reason of this keyword?  No test.
 		else if (key == "after_write")
 		{
 			if (!PC_status(value)) {
@@ -253,7 +259,7 @@ Damaris_cfg::Damaris_cfg(PDI::Context& ctx, PC_tree_t tree)
 				}
 			}
 		}
-
+		// comment: These keyword are equivalent ??? Choose one. perhaps "is_client"?
 		else if (key == "start" || key == "get_is_client" || key == "is_client_get")
 		{
 			if (!PC_status(value)) {
@@ -261,7 +267,7 @@ Damaris_cfg::Damaris_cfg(PDI::Context& ctx, PC_tree_t tree)
 				load_desc(m_descs, ctx, m_is_client_dataset_name, Desc_type::IS_CLIENT_GET);
 			}
 		}
-
+		// comment: I prefer to use "client_comm" or "simulation_comm"
 		else if (key == "client_comm_get")
 		{
 			if (!PC_status(value)) {
@@ -325,7 +331,7 @@ void Damaris_cfg::parse_architecture_tree(PDI::Context& ctx, PC_tree_t arch_tree
 	}
 	//Buffer
 	std::string buffer_name = sim_name + "_buffer";
-	long buffer_size = 67108864;
+	long buffer_size = 67108864; // Comment: This number correspond to ???
 	PC_tree_t buffer_size_tree = PC_get(arch_tree, ".buffer_size");
 	if (!PC_status(buffer_size_tree)) {
 		buffer_size = PDI::to_long(buffer_size_tree);
@@ -1118,7 +1124,8 @@ Dataset_Write_Info Damaris_cfg::get_dataset_write_info(std::string data_name) co
 	try {
 		return m_datasets_to_write.at(data_name);
 	} catch (...) {
-		assert(false && "Trying to get inexistant damaris awaited dataset!");
+		// comment: assert is only working in debug mode? ==> not working
+		assert(false && "Trying to get inexistant damaris awaited dataset!"); 
 	}
 }
 
@@ -1127,6 +1134,7 @@ std::pair<std::string, Desc_type> Damaris_cfg::get_parameter_to_update_info(std:
 	try {
 		return m_parameter_to_update.at(data_name);
 	} catch (...) {
+		// comment: assert is only working in debug mode? ==> not working
 		assert(false && "Trying to get inexistant damaris awaited dataset!");
 	}
 }
@@ -1156,6 +1164,8 @@ std::string Damaris_cfg::end_iteration_on_event() const
 	return m_end_iteration_on_event;
 }
 
+
+/// Comment: Do we need to redefine here?
 std::string Damaris_cfg::m_is_client_dataset_name = "";
 std::string Damaris_cfg::m_client_comm_get_dataset_name = "";
 

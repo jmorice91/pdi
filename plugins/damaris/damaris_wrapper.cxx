@@ -63,8 +63,9 @@ Damaris_wrapper::Damaris_wrapper(PDI::Context& ctx, const char* xmlConfigObject,
 	int status = damaris_pdi_initialize(xmlConfigObject, comm);
 	if (status != DAMARIS_OK) {
 		throw PDI::Plugin_error{"Cannot initialize Damaris library"};
-	} else
+	} else {
 		ctx.logger().info("Damaris lib initialization Done!");
+	}
 }
 
 int Damaris_wrapper::damaris_pdi_initialize(const char* configfile, MPI_Comm comm)

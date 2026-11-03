@@ -68,6 +68,9 @@ bool Damaris_api_call_handler::is_damaris_api_call_event(std::string event_name)
 	return false;
 }
 
+// Comment: no check of the value of the return of Damaris api in this function
+//          Damaris API can throw error ???
+
 void Damaris_api_call_handler::damaris_api_call_event(
 	PDI::Context& ctx,
 	std::unique_ptr<Damaris_wrapper>& m_damaris,
@@ -358,7 +361,8 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			var_name = (char*)data_name.c_str();
 			data = va_arg(extra_args, void*); //const void*
 		} else {
-			//Retrive parameters! sent via Multi expose, the two last sent data
+			// comment: Why this correspond to the two last? [need to be check]
+			//Retrive parameters! sent via Multi expose, the two last sent data 
 			char* var_name;
 			std::string arg1_name;
 			void* data;
@@ -594,7 +598,7 @@ void Damaris_api_call_handler::damaris_api_call_event(
 			throw PDI::System_error("An issue occurred when finalizing Damaris.");
 		}
 	} else {
-		assert(false && "Unexpected damaris event type");
+		assert(false && "Unexpected damaris event type"); // ==> not working can be deleted
 		//ctx.logger().warn("Unexpected damaris event type.");
 		throw PDI::System_error("Unexpected damaris event type in calling 'damaris_api_call_event'.");
 	}

@@ -89,6 +89,10 @@ enum class Event_type {
 	DAMARIS_FINALIZE = 14
 };
 
+
+// Comment: internal use ==> not really because can name a event with this name !!!
+//                       ==> Bad design a user can define damaris_event_name(Event_type::DAMARIS_WRITE) =  damaris_initialize  for example?
+//          ask for feedback by Julien
 /** These default event names are for internal use. If a configured name is given, these ones will be surcharged */
 const std::unordered_map<Event_type, std::string> damaris_event_names
 	= {{Event_type::DAMARIS_INITIALIZE, "damaris_initialize"},
