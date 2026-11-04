@@ -43,9 +43,11 @@ pdi:
             files_path: ./HDF5_files/
       write: 
         int_values:
+          # Q: when: $iter%2=0
           dataset: int_values
           position: ["0"]
         int22_values:
+          # Q: when: $iter%2=1
           dataset: int22_values
           position: ["0"]
       log:
