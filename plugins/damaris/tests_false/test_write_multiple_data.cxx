@@ -75,11 +75,30 @@ int main(int argc, char* argv[])
 		for (int ii = 0; ii < dsize; ++ii) {
 			int22_values[ii] = 300 + ii;
 		}
+        
+		// PB, end_iteration called after the second expose
+		PDI_expose("int_values", int_values.data(), PDI_OUT);
+		PDI_expose("int_values", int_values.data(), PDI_OUT);
+		PDI_expose("int_values", int_values.data(), PDI_OUT);
+		PDI_expose("int_values", int_values.data(), PDI_OUT);
+		
+		// OK
+		PDI_expose("int_values", int_values.data(), PDI_OUT);
+		PDI_expose("int22_values", int_values.data(), PDI_OUT);
+		
+		// OK
+		// PDI_multi_expose("event", "int_values", int_values.data(), PDI_OUT,
+		//	                      "int22_values", int_values.data(), PDI_OUT, NULL);
 
-		PDI_expose("int_values", int_values.data(), PDI_OUT);
-		PDI_expose("int_values", int_values.data(), PDI_OUT);
-		PDI_expose("int_values", int_values.data(), PDI_OUT);
-		PDI_expose("int_values", int_values.data(), PDI_OUT);
+		// damaris waits for int22
+		// PDI_multi_expose("event", "int_values", int_values.data(), PDI_OUT,
+		// 	                      "int33_values", int_values.data(), PDI_OUT, NULL);
+
+		// OK
+		// PDI_multi_expose("event", "int_values", int_values.data(), PDI_OUT,
+		// 	                      "int33_values", int_values.data(), PDI_OUT, NULL);
+		// PDI_expose("int22_values", int_values.data(), PDI_OUT);
+
 	}
 
 	PDI_finalize();
