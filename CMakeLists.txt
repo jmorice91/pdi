@@ -80,6 +80,7 @@ option(BUILD_TRACE_PLUGIN       "Build Trace plugin" ON)
 option(BUILD_USER_CODE_PLUGIN   "Build User-code plugin" ON)
 option(BUILD_VELOC_PLUGIN   	"Build VeloC plugin" "${BUILD_UNSTABLE}")
 option(ENABLE_BENCHMARKING      "Activate benchmarks in the test suite" OFF)
+option(BUILD_CATALYST_PLUGIN    "Build Catalyst plugin" "${BUILD_UNSTABLE}")
 
 
 
@@ -578,6 +579,13 @@ sbuild_add_module(PDI_API_TESTS
 sbuild_add_module(TIMER_PLUGIN
 	ENABLE_BUILD_FLAG BUILD_TIMER_PLUGIN
 	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/plugins/timer"
+	DEPENDS PDI
+	SUBSTEPS test
+)
+
+sbuild_add_module(CATALYST_PLUGIN
+	ENABLE_BUILD_FLAG BUILD_CATALYST_PLUGIN
+	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/plugins/catalyst"
 	DEPENDS PDI
 	SUBSTEPS test
 )

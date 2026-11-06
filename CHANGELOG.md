@@ -12,6 +12,7 @@ and this project adheres to
 ### For users
 
 #### Added
+* Add Catalyst plugin from Kitware [#496](https://github.com/pdidev/pdi/pull/496)
 
 #### Changed
 
