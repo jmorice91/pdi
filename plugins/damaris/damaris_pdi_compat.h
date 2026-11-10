@@ -26,10 +26,56 @@
 #ifndef DAMARIS_PDI_COMPAT_H_
 #define DAMARIS_PDI_COMPAT_H_
 
+#include <functional>
+#include <string>
+
+#include <pdi/context.h>
 #include <pdi/error.h>
+#include <pdi/ref_any.h>
 #include <pdi/version.h>
 
+// PDI up to 1.12 (and early 1.13 alphas) registers callbacks through
+// Context::callbacks(); newer PDI merged Callbacks into the context (on_data /
+// on_data_remove / on_event) and removed <pdi/callbacks.h>. Both APIs exist
+// under the version string 1.13.0-alpha, so detect the API of the PDI actually
+// included: the old <pdi/context.h> includes <pdi/callbacks.h>, whose include
+// guard is then defined. (__has_include would also see a stale callbacks.h of
+// another PDI installed on the default include path.)
+#ifdef PDI_CALLBACKS_H_
+#define DAMARIS_PDI_HAS_CALLBACKS 1
+#endif
+
 namespace damaris_pdi {
+
+/// Called when `name' (any data if empty) becomes available.
+inline std::function<void()> pdi_on_data(PDI::Context& ctx, const std::function<void(const std::string&, PDI::Ref)>& callback, const std::string& name = {})
+{
+#ifdef DAMARIS_PDI_HAS_CALLBACKS
+	return ctx.callbacks().add_data_callback(callback, name);
+#else
+	return ctx.on_data(callback, name);
+#endif
+}
+
+/// Called when `name' (any data if empty) is about to be reclaimed.
+inline std::function<void()> pdi_on_data_remove(PDI::Context& ctx, const std::function<void(const std::string&, PDI::Ref)>& callback, const std::string& name = {})
+{
+#ifdef DAMARIS_PDI_HAS_CALLBACKS
+	return ctx.callbacks().add_data_remove_callback(callback, name);
+#else
+	return ctx.on_data_remove(callback, name);
+#endif
+}
+
+/// Called on event `name' (any event if empty).
+inline std::function<void()> pdi_on_event(PDI::Context& ctx, const std::function<void(const std::string&)>& callback, const std::string& name = {})
+{
+#ifdef DAMARIS_PDI_HAS_CALLBACKS
+	return ctx.callbacks().add_event_callback(callback, name);
+#else
+	return ctx.on_event(callback, name);
+#endif
+}
 
 /// PDI's configuration-error class: `Config_error' up to PDI 1.10.x, renamed
 /// `Spectree_error' in PDI 1.11 (same (PC_tree_t, format, args...) constructor).

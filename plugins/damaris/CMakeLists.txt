@@ -76,6 +76,18 @@ add_library(pdi_damaris_plugin MODULE
         damaris_pdi_sim_async_forwarder.cxx
         damaris_pdi_event_discovery.cxx)
 target_link_libraries(pdi_damaris_plugin PUBLIC PDI::PDI_plugins ${Damaris_DEPS})
+# The headers of the PDI found above must come first. Damaris_INCLUDE_DIRS holds
+# the prefixes of Damaris's dependencies (Xerces, XSD, HDF5...) as -I paths,
+# which GCC searches before any -isystem one: if one of them also holds another
+# PDI, that PDI's headers would be compiled in silently. So the found PDI's
+# include directories go first as -I; imported include directories are not
+# made -isystem, since GCC ignores a -I directory that is also given as -isystem.
+get_target_property(DAMARIS_PLUGIN_PDI_INCLUDE_DIRS PDI::PDI_plugins INTERFACE_INCLUDE_DIRECTORIES)
+function(damaris_plugin_pdi_headers_first target)
+	set_property(TARGET ${target} PROPERTY NO_SYSTEM_FROM_IMPORTED ON)
+	target_include_directories(${target} BEFORE PRIVATE ${DAMARIS_PLUGIN_PDI_INCLUDE_DIRS})
+endfunction()
+damaris_plugin_pdi_headers_first(pdi_damaris_plugin)
 set_target_properties(pdi_damaris_plugin PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
 # installation

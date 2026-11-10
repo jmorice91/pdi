@@ -44,6 +44,7 @@
 
 #include "damaris_api_call_handler.h"
 #include "damaris_pdi_sim_async_forwarder.h"
+#include "damaris_pdi_compat.h"
 #include "damaris_cfg.h"
 #include "damaris_wrapper.h"
 
@@ -93,21 +94,21 @@ public:
 	{
 		std::string data_cb_concat = "";
 		for (auto&& desc: m_config.descs()) { //add data callback only for awaited data
-			ctx.callbacks().add_data_callback([this](const std::string& name, PDI::Ref ref) { this->data(name, ref); }, desc.first);
+			pdi_on_data(ctx, [this](const std::string& name, PDI::Ref ref) { this->data(name, ref); }, desc.first);
 			data_cb_concat.append(desc.first + ", ");
 		}
 		context().logger().debug("Data for callback : {}", data_cb_concat);
 
 		//Sim configured event names
 		for (auto&& event: m_config.events()) {
-			ctx.callbacks().add_event_callback([this](const std::string& name) { this->event(name); }, event.first);
+			pdi_on_event(ctx, [this](const std::string& name) { this->event(name); }, event.first);
 		}
 
 		//Default event names, maight be called internally
 		for (int i = 0; i <= static_cast<int>(Event_type::DAMARIS_FINALIZE); ++i) {
 			const char* ev_name = event_name_for(static_cast<Event_type>(i));
 			if (m_config.events().find(ev_name) == m_config.events().end())
-				ctx.callbacks().add_event_callback([this](const std::string& name) { this->event(name); }, ev_name);
+				pdi_on_event(ctx, [this](const std::string& name) { this->event(name); }, ev_name);
 		}
 
 		//data and event forwarding — only metadata descriptors go through pdi_generic_channel;
@@ -121,13 +122,13 @@ public:
 		for (auto&& desc: m_config.descs_to_forward()) {
 			if (!desc.second) { // data descriptor (is_metadata == false)
 				forwarded_data.insert(desc.first);
-				ctx.callbacks().add_data_callback([this, &ctx](const std::string& name, PDI::Ref) { m_sim_async_forwarder.forward_data_share(ctx, name); }, desc.first);
+				pdi_on_data(ctx, [this, &ctx](const std::string& name, PDI::Ref) { m_sim_async_forwarder.forward_data_share(ctx, name); }, desc.first);
 				continue;
 			}
 			if (!m_config.is_serializable_metadata(desc.first)) continue; // skip MPI_Comm etc.
-			ctx.callbacks().add_data_callback([this, &ctx](const std::string& name, PDI::Ref ref) { m_sim_async_forwarder.forward_share(ctx, name, ref); }, desc.first);
+			pdi_on_data(ctx, [this, &ctx](const std::string& name, PDI::Ref ref) { m_sim_async_forwarder.forward_share(ctx, name, ref); }, desc.first);
 
-			ctx.callbacks().add_data_remove_callback([this, &ctx](const std::string& name, PDI::Ref ref) {
+			pdi_on_data_remove(ctx, [this, &ctx](const std::string& name, PDI::Ref ref) {
 					m_sim_async_forwarder.forward_reclaim(ctx, name, ref);
 				}, desc.first
 			);
@@ -140,7 +141,7 @@ public:
 		for (auto&& ds: m_config.datasets_to_write()) reclaim_watched.insert(ds.first);
 		for (auto&& name: reclaim_watched) {
 			const bool forwarded = forwarded_data.count(name) > 0;
-			ctx.callbacks().add_data_remove_callback([this, &ctx, forwarded](const std::string& name, PDI::Ref ref) {
+			pdi_on_data_remove(ctx, [this, &ctx, forwarded](const std::string& name, PDI::Ref ref) {
 					if (forwarded) m_sim_async_forwarder.forward_reclaim(ctx, name, ref);
 					dataset_reclaimed(name);
 				}, name
@@ -149,7 +150,7 @@ public:
 		// Event forwarding (cf. `fwd_events:'). Damaris control events drive the
 		// client-side Damaris API and are never forwarded.
 		if (m_config.forward_all_events()) {
-			ctx.callbacks().add_event_callback([this, &ctx](const std::string& name) {
+			pdi_on_event(ctx, [this, &ctx](const std::string& name) {
 				if (!is_damaris_control_event(name)) m_sim_async_forwarder.forward_event(ctx, name);
 			});
 		} else {
@@ -158,7 +159,7 @@ public:
 					ctx.logger().warn("fwd_events: `{}' is a Damaris control event and is not forwarded", event);
 					continue;
 				}
-				ctx.callbacks().add_event_callback([this, &ctx](const std::string& name) { m_sim_async_forwarder.forward_event(ctx, name); }, event);
+				pdi_on_event(ctx, [this, &ctx](const std::string& name) { m_sim_async_forwarder.forward_event(ctx, name); }, event);
 			}
 		}
 

@@ -101,7 +101,7 @@ fwd_events: auto                          # default
 | `pycall`, `set_value` | keys of `on_event` |
 | `user_code` | keys of `on_event` (map, or list of one-key maps) |
 | `timer` | `start` / `stop` of each timer |
-| `veloc` | `managed_checkpointing.{checkpoint,recover,synchronize}_on`, `custom_checkpointing.custom_{checkpoint,recover}.{start,end,route_file}_on` |
+| `veloc` | `managed_checkpointing.{checkpoint,recover,synchronize}_on`, `custom_checkpointing.custom_{checkpoint,recover}.{start,end,route_file}_on` (and the `*_on_event` names of the VeloC plugin for PDI 1.13) |
 | `mpi`, `serialize`, `json` | none |
 | `trace` | listens to every event but does not widen the set (a note is logged) |
 | other plugins | `on_event` only, with a warning: add missing events with `extra` |

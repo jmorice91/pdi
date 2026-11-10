@@ -123,14 +123,17 @@ const std::unordered_map<std::string, Extractor>& plugin_event_table()
 				 });
 			 });
 		 }},
+		// VeloC plugin: `*_on' keys; the plugin for PDI 1.13 renamed them `*_on_event'
 		{"veloc", [](PC_tree_t cfg, Names& out) {
 			 PC_tree_t managed = PC_get(cfg, ".managed_checkpointing");
-			 for (const char* key: {".checkpoint_on", ".recover_on", ".synchronize_on"}) {
+			 for (const char* key: {".checkpoint_on", ".recover_on", ".synchronize_on",
+			                        ".checkpoint_on_event", ".recover_on_event", ".synchronize_on_event"}) {
 				 add_names(PC_get(managed, key), out);
 			 }
 			 for (const char* section: {".custom_checkpointing.custom_checkpoint", ".custom_checkpointing.custom_recover"}) {
 				 PC_tree_t custom = PC_get(cfg, section);
-				 for (const char* key: {".start_on", ".end_on", ".route_file_on"}) {
+				 for (const char* key: {".start_on", ".end_on", ".route_file_on",
+				                        ".start_on_event", ".end_on_event", ".route_file_on_event"}) {
 					 add_names(PC_get(custom, key), out);
 				 }
 			 }

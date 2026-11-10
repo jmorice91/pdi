@@ -107,6 +107,24 @@ plugins:
 )"), (Names{"newiter", "cp_start", "cp_end", "cp_route", "rec_start"}));
 }
 
+TEST(EventDiscovery, VelocPdi113KeyNames)
+{
+	// VeloC plugin for PDI 1.13: `*_on_event' keys, communicator given as a descriptor
+	EXPECT_EQ(discover(R"(
+plugins:
+  veloc:
+    config_file: veloc.cfg
+    communicator: mpi_comm
+    status: veloc_checkpoint_status
+    managed_checkpointing:
+      protect_data: [iter, main_field]
+      synchronize_on_event: newiter
+      when: '$iter % 5 = 0'
+    custom_checkpointing:
+      custom_checkpoint: { start_on_event: cp_start, end_on_event: cp_end, route_file_on_event: cp_route }
+)"), (Names{"newiter", "cp_start", "cp_end", "cp_route"}));
+}
+
 TEST(EventDiscovery, PycallMapKeys)
 {
 	EXPECT_EQ(discover(R"(
