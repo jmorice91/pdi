@@ -77,7 +77,7 @@ pdi:
             name: hdf5_example
             type: HDF5
             file_mode: Collective       # or FilePerCore
-            files_path: ./HDF5_files_after_failure/   # Where to save files
+            files_path: ./damaris_hdf5_output_after_failure/   # Where to save files
           
       write: 
         main_field: # the name of the data to write, if dataset not specified afterward! ~meme notion de dataset hdf5
