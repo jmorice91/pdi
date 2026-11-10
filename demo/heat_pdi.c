@@ -31,12 +31,6 @@
  * (plugins, data descriptors, checkpointing) is driven by the YAML file given
  * on the command line, under the ".pdi" key.
  *
- * Application-level keys read from the same YAML file:
- *   datasize: [height, width]       global grid size
- *   parallelism: {height, width}    MPI process grid
- *   duration: <seconds>             wall-clock duration of the run
- *   veloc_checkpoint_status: <int>  optional, default 1
- *   temp_threshold: <double>        optional, default 0
  */
 
 #include <assert.h>
@@ -47,6 +41,12 @@
 #include <stdlib.h>
 
 #include <pdi.h>
+
+/* hot for 4000 iterations, then cool for 4000, and so on */
+static double wall_temperature(int step)
+{
+	return ((step / 2500) % 2 == 0) ? 1000000 : 100000;
+}
 
 /* Called through PDI (e.g. from a user-code plugin): reads shared data and
  * sets "stop" once the coldest interior cell reaches the threshold. */
@@ -98,14 +98,15 @@ static void init(int dsize[2], int pcoord[2], double dat[dsize[0]][dsize[1]])
 	}
 }
 
-static void iter(int dsize[2], double cur[dsize[0]][dsize[1]], double next[dsize[0]][dsize[1]])
+static void iter(int dsize[2], int pcoord[2], int step, double cur[dsize[0]][dsize[1]], double next[dsize[0]][dsize[1]])
 {
 	int xx, yy;
 	for (xx = 0; xx < dsize[1]; ++xx) {
 		next[0][xx] = cur[0][xx];
 	}
 	for (yy = 1; yy < dsize[0] - 1; ++yy) {
-		next[yy][0] = cur[yy][0];
+		/* leftmost processes update the wall temperature; other processes keep their old value */
+		next[yy][0] = (pcoord[1] == 0) ? wall_temperature(step) : cur[yy][0];
 		for (xx = 1; xx < dsize[1] - 1; ++xx) {
 			next[yy][xx]
 				= (cur[yy][xx] * .5) + (cur[yy][xx - 1] * .125) + (cur[yy][xx + 1] * .125) + (cur[yy - 1][xx] * .125) + (cur[yy + 1][xx] * .125);
@@ -194,6 +195,7 @@ int main(int argc, char* argv[])
 	int is_client = 1;
 	PDI_expose("is_client", &is_client, PDI_INOUT); // The order doesn't care
 	PDI_expose("mpi_comm", &main_comm, PDI_INOUT); // <-- allow plugin to set, returns Damaris client comm
+	PDI_expose("catalyst_comm", &main_comm, PDI_INOUT);
 
 	if (is_client) {
 
@@ -274,7 +276,7 @@ int main(int argc, char* argv[])
 				first_iter = 0;
 			}
 
-			iter(dsize, cur, next);
+			iter(dsize, pcoord, ii, cur, next);
 			exchange(cart_com, dsize, next);
 			double(*tmp)[dsize[1]] = cur;
 			cur = next;
@@ -301,6 +303,7 @@ int main(int argc, char* argv[])
 					if (0 == pcoord_1d) {
 						printf("iter=%7d; time=%7.3f; temperature=%7.3f; END OF SIMULATION!\n", ii, global_time, global_min);
 					}
+					stop=1; 
 					break;
 				}
 				int rem_iter = .9 * (duration - global_time) * (ii + 1) / (global_time + 0.1);
@@ -309,9 +312,12 @@ int main(int argc, char* argv[])
 				if (0 == pcoord_1d) printf("iter=%7d; time=%7.3f; next_reduce=%7d\n", ii, global_time, next_reduce);
 			}
 		}
-		PDI_event("finalization");
-		PDI_expose("iter", &ii, PDI_OUT);
-		PDI_expose("main_field", cur, PDI_OUT);
+		// required because damaris does not have on_event key therefore it will write main_field on final expose 
+		if(!stop){
+			PDI_event("finalization");
+			PDI_expose("iter", &ii, PDI_OUT);
+			PDI_expose("main_field", cur, PDI_OUT);
+		}
 
 		free(cur);
 		free(next);

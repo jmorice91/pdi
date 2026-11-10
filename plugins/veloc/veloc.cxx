@@ -341,8 +341,15 @@ public:
 
 	~veloc_plugin()
 	{
-		context().logger().info("{} checkpoints were written", m_cp_counter);
+		if(m_cp_counter==0){
+			context().logger().info("No checkpoints were written by one rank", m_cp_counter);
+		}
+		else{
+			context().logger().info("{} checkpoints were written by one rank", m_cp_counter);
+		}
+		
 		context().logger().info("Closing plugin");
+		
 		if (m_veloc_initialized) {
 			finalize(context());
 		}

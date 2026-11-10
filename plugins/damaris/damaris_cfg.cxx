@@ -309,7 +309,7 @@ Damaris_cfg::Damaris_cfg(PDI::Context& ctx, PC_tree_t tree)
 
 		outputXMLFile.close();
 	} else {
-		ctx.logger().error("Could not open the file for writing damaris xml config");
+		ctx.logger().warn("Could not open the file for writing damaris xml config");
 	}
 }
 
